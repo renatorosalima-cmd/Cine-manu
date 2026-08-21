@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000">
+<title>Cine Manual Web V3</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;padding:0;width:100%;height:100%;background:#000;overflow:hidden;font-family:Arial,sans-serif;color:#fff}
+#app{position:fixed;inset:0;background:#000;overflow:hidden}#preview{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;background:#000;transform-origin:center;transition:transform .12s}
+#touch{position:absolute;inset:0;z-index:12;touch-action:none}.bar{position:absolute;left:0;width:100%;z-index:30;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px;background:rgba(0,0,0,.68);padding:6px}
+#topBar{top:0;padding-top:calc(6px + env(safe-area-inset-top))}#bottomBar{bottom:0;padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+button,select,input{font:inherit}button,select{background:#151515;color:#fff;border:1px solid #666;border-radius:8px;padding:7px 8px;font-size:11px}button:active{transform:scale(.96)}
+.rec{border-color:#b00000}#zoom{width:105px}.value{min-width:42px;text-align:center;font-size:11px}#status{width:100%;text-align:center;font-size:9px;color:#ddd}
+#recDot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#777;margin-right:4px}.recording #recDot{background:red;box-shadow:0 0 10px red}
+#timer{min-width:52px;text-align:center;font-weight:bold;font-size:11px}#guides{position:absolute;inset:0;z-index:7;pointer-events:none}.guide{position:absolute;background:rgba(255,255,255,.32)}
+.v1{left:33.333%;top:0;width:1px;height:100%}.v2{left:66.666%;top:0;width:1px;height:100%}.h1{top:33.333%;left:0;height:1px;width:100%}.h2{top:66.666%;left:0;height:1px;width:100%}
+.letter{position:absolute;left:0;width:100%;background:#000;z-index:8;display:none;pointer-events:none}
+#message{position:absolute;z-index:50;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.72);padding:15px 20px;border-radius:10px;text-align:center;max-width:90%}
+#focusBox{position:absolute;z-index:20;width:64px;height:64px;border:2px solid #fff;border-radius:3px;display:none;transform:translate(-50%,-50%);pointer-events:none}.show{display:block!important}
+#exposureLine{position:absolute;z-index:21;width:3px;height:82px;background:#fff;border-radius:3px;display:none;transform:translate(-50%,-50%);pointer-events:none}
+#manualPanel,#toolsPanel{position:absolute;z-index:45;left:50%;top:50%;transform:translate(-50%,-50%);width:min(390px,92vw);max-height:80vh;overflow:auto;background:rgba(0,0,0,.94);border:1px solid #666;border-radius:12px;padding:14px;display:none}
+h3{margin:0 0 12px;text-align:center;font-size:15px}.row{display:flex;align-items:center;gap:7px;margin:9px 0}.row label{width:105px;font-size:11px}.row input,.row select{flex:1}.small{font-size:9px;color:#aaa;text-align:center;line-height:1.4}
+.toolState{display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:11px}#histogram{position:absolute;right:8px;top:80px;width:150px;height:70px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.45);z-index:18;display:none}
+#level{position:absolute;left:50%;top:50%;width:120px;height:2px;background:#fff;transform:translate(-50%,-50%);z-index:17;display:none;opacity:.8}#levelDot{position:absolute;left:50%;top:50%;width:10px;height:10px;border:2px solid #fff;border-radius:50%;transform:translate(-50%,-50%);z-index:18;display:none}
+#zebra{position:absolute;inset:0;z-index:16;pointer-events:none;display:none;opacity:.28;background:repeating-linear-gradient(135deg,transparent 0 7px,#fff 7px 9px)}
+@media(max-width:600px){button,select{font-size:11px;padding:7px 7px}}
+</style>
+</head>
+<body>
+<div id="app">
+<video id="preview" autoplay playsinline muted></video><div id="touch"></div>
+<div id="guides"><div class="guide v1"></div><div class="guide v2"></div><div class="guide h1"></div><div class="guide h2"></div></div>
+<div id="zebra"></div><canvas id="histogram"></canvas><div id="level"></div><div id="levelDot"></div><div id="focusBox"></div><div id="exposureLine"></div>
+<div id="topLetter" class="letter"></div><div id="bottomLetter" class="letter"></div>
+
+<div id="manualPanel">
+<h3>🎛️ CONTROLES MANUAIS</h3>
+<div class="row"><label>☀ Exposição</label><input id="exposure" type="range" min="-2" max="2" step=".1" value="0"><span id="exposureValue" class="value">0.0</span></div>
+<div class="row"><label>🎯 Foco</label><select id="focusMode"><option>Não disponível</option></select></div>
+<div class="row"><label>🌡️ WB</label><select id="whiteBalance"><option>Não disponível</option></select></div>
+<div class="row"><label>ISO</label><input id="iso" type="range" min="100" max="3200" step="100" value="400"><span id="isoValue" class="value">400</span></div>
+<div class="row"><label>Obturador</label><select id="shutter"><option>Automático</option><option>1/24</option><option>1/30</option><option>1/48</option><option>1/50</option><option>1/60</option><option>1/120</option></select></div>
+<div class="row"><label>Bitrate</label><select id="bitrate"><option value="8000000">8 Mbps</option><option value="12000000">12 Mbps</option><option value="20000000" selected>20 Mbps</option><option value="30000000">30 Mbps</option></select></div>
+<div class="small">ISO e obturador dependem do que o navegador expõe para a câmera. Se não houver suporte, a gravação continua funcionando.</div>
+</div>
+
+<div id="toolsPanel">
+<h3>🎬 FERRAMENTAS</h3>
+<div class="toolState"><span>Grade 3×3</span><button id="gridToggle">ON</button></div>
+<div class="toolState"><span>Zebra</span><button id="zebraToggle">OFF</button></div>
+<div class="toolState"><span>Histograma</span><button id="histToggle">OFF</button></div>
+<div class="toolState"><span>Nível</span><button id="levelToggle">OFF</button></div>
+<div class="toolState"><span>Guias cinema</span><select id="aspect"><option value="normal">Normal</option><option value="2.39">2.39:1</option><option value="2.35">2.35:1</option><option value="1.85">1.85:1</option></select></div>
+<div class="small">As ferramentas visuais são auxiliares de enquadramento. Elas não alteram o arquivo gravado.</div>
+</div>
+
+<div id="topBar" class="bar"><button id="openCamera">📷 Abrir</button><button id="flipCamera">🔄 Trocar</button>
+<select id="resolution"><option value="auto">Auto</option><option value="1920x1080">1080p</option><option value="1280x720">720p</option><option value="3840x2160">4K</option></select>
+<select id="fps"><option value="auto">FPS Auto</option><option value="24">24 FPS</option><option value="25">25 FPS</option><option value="30">30 FPS</option><option value="60">60 FPS</option></select></div>
+
+<div id="bottomBar" class="bar"><button id="manualButton">🎛️ Manual</button><button id="toolsButton">🛠️ Ferramentas</button>
+<input id="zoom" type="range" min="1" max="4" step=".1" value="1"><span id="zoomValue" class="value">1.0×</span>
+<button id="recordButton" class="rec"><span id="recDot"></span><span id="recordText">REC</span></button><span id="timer">00:00</span><div id="status">Aguardando câmera</div></div>
+<div id="message">Toque em <b>Abrir</b> para iniciar a câmera.</div></div>
+
+<script>
+let stream=null,videoTrack=null,capabilities={},facingMode="environment",recorder=null,recordedChunks=[],recording=false,recordingStart=0,timerInterval=null,realZoom=false,touchStartY=0,startExposure=0,moved=false;
+const $=id=>document.getElementById(id);
+function showMessage(t){$("message").innerHTML=t;$("message").style.display=t?"block":"none"}function setStatus(t){$("status").textContent=t}
+function stopCamera(){if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;videoTrack=null}
+function constraints(){let video={facingMode:{ideal:facingMode}},r=$("resolution").value,f=$("fps").value;if(r!="auto"){let p=r.split("x");video.width={ideal:+p[0]};video.height={ideal:+p[1]}}if(f!="auto")video.frameRate={ideal:+f,max:+f};return{audio:true,video}}
+async function openCamera(){stopCamera();try{stream=await navigator.mediaDevices.getUserMedia(constraints());$("preview").srcObject=stream;await $("preview").play();videoTrack=stream.getVideoTracks()[0];capabilities=videoTrack.getCapabilities?videoTrack.getCapabilities():{};configureControls();let s=videoTrack.getSettings();$("zoom").value=1;applyZoom();setStatus(`${s.width||"?"} × ${s.height||"?"} • ${Math.round(s.frameRate||0)} FPS`);updateCinema();showMessage("")}catch(e){console.error(e);showMessage("Não foi possível abrir a câmera.<br><br><small>Confira a permissão da câmera e HTTPS.</small>");setStatus(e.name||"Erro")}}
+function fillSelect(id,arr,names={}){let el=$(id);el.innerHTML="";if(Array.isArray(arr)&&arr.length){el.disabled=false;arr.forEach(v=>{let o=document.createElement("option");o.value=v;o.textContent=names[v]||v;el.appendChild(o)})}else{el.disabled=true;el.innerHTML="<option>Não disponível</option>"}}
+function configureControls(){let z=capabilities.zoom;realZoom=!!z;if(z){$("zoom").min=z.min||1;$("zoom").max=Math.min(z.max||4,8);$("zoom").step=z.step||.1}else{$("zoom").min=1;$("zoom").max=4;$("zoom").step=.1}let ex=capabilities.exposureCompensation;$("exposure").disabled=!ex;if(ex){$("exposure").min=ex.min;$("exposure").max=ex.max;$("exposure").step=ex.step||.1}fillSelect("focusMode",capabilities.focusMode,{"continuous":"Contínuo","single-shot":"Toque","manual":"Manual"});fillSelect("whiteBalance",capabilities.whiteBalanceMode,{})}
+async function applyZoom(){let v=+$("zoom").value;$("zoomValue").textContent=v.toFixed(1)+"×";if(videoTrack&&realZoom){try{await videoTrack.applyConstraints({advanced:[{zoom:v}]});$("preview").style.transform="scale(1)";return}catch(e){}}$("preview").style.transform=`scale(${v})`}
+async function applyManual(){if(!videoTrack)return;let a={};if(!$("exposure").disabled)a.exposureCompensation=+$("exposure").value;if(!$("focusMode").disabled)a.focusMode=$("focusMode").value;if(!$("whiteBalance").disabled)a.whiteBalanceMode=$("whiteBalance").value;try{if(Object.keys(a).length)await videoTrack.applyConstraints({advanced:[a]});setStatus("Controle aplicado")}catch(e){setStatus("Controle não suportado")}}
+function showFocus(x,y){let b=$("focusBox");b.style.left=x+"px";b.style.top=y+"px";b.classList.add("show");setTimeout(()=>b.classList.remove("show"),900)}
+async function focusAt(){if(!videoTrack)return;let m=capabilities.focusMode||[];try{if(m.includes("single-shot"))await videoTrack.applyConstraints({advanced:[{focusMode:"single-shot"}]});else if(m.includes("continuous"))await videoTrack.applyConstraints({advanced:[{focusMode:"continuous"}]});setStatus("Foco aplicado")}catch(e){setStatus("Foco não suportado")}}
+$("touch").addEventListener("pointerdown",e=>{if(!videoTrack)return;touchStartY=e.clientY;startExposure=+$("exposure").value;moved=false});
+$("touch").addEventListener("pointermove",e=>{if(!videoTrack)return;let dy=e.clientY-touchStartY;if(Math.abs(dy)>15)moved=true;if(moved&&!$("exposure").disabled){let min=+$("exposure").min,max=+$("exposure").max,v=Math.max(min,Math.min(max,startExposure-dy*(max-min)/250));$("exposure").value=v;$("exposureValue").textContent=v.toFixed(1);applyManual();$("exposureLine").style.left=e.clientX+"px";$("exposureLine").style.top=e.clientY+"px";$("exposureLine").style.display="block"}});
+$("touch").addEventListener("pointerup",e=>{if(!videoTrack)return;if(!moved){showFocus(e.clientX,e.clientY);focusAt()}setTimeout(()=>$("exposureLine").style.display="none",500)});
+$("openCamera").onclick=openCamera;$("flipCamera").onclick=()=>{facingMode=facingMode==="environment"?"user":"environment";openCamera()};$("zoom").oninput=applyZoom;$("exposure").oninput=()=>{$("exposureValue").textContent=(+$("exposure").value).toFixed(1);applyManual()};$("focusMode").onchange=applyManual;$("whiteBalance").onchange=applyManual;
+$("manualButton").onclick=()=>{let p=$("manualPanel"),v=p.style.display==="block";p.style.display=v?"none":"block";$("toolsPanel").style.display="none"};
+$("toolsButton").onclick=()=>{let p=$("toolsPanel"),v=p.style.display==="block";p.style.display=v?"none":"block";$("manualPanel").style.display="none"};
+$("gridToggle").onclick=()=>{let g=$("guides"),on=g.style.display!=="none";g.style.display=on?"none":"block";$("gridToggle").textContent=on?"OFF":"ON"};
+$("zebraToggle").onclick=()=>{let z=$("zebra"),on=z.style.display==="block";z.style.display=on?"none":"block";$("zebraToggle").textContent=on?"OFF":"ON"};
+$("levelToggle").onclick=()=>{let a=$("level"),b=$("levelDot"),on=a.style.display==="block";a.style.display=on?"none":"block";b.style.display=on?"none":"block";$("levelToggle").textContent=on?"OFF":"ON"};
+$("histToggle").onclick=()=>{let c=$("histogram"),on=c.style.display==="block";c.style.display=on?"none":"block";$("histToggle").textContent=on?"OFF":"ON";if(!on)drawHistogram()};
+function drawHistogram(){let c=$("histogram"),x=c.getContext("2d");c.width=150;c.height=70;x.clearRect(0,0,150,70);if(!$("preview").videoWidth)return;let t=document.createElement("canvas");t.width=64;t.height=36;let q=t.getContext("2d");q.drawImage($("preview"),0,0,64,36);let d=q.getImageData(0,0,64,36).data,b=new Array(32).fill(0);for(let i=0;i<d.length;i+=4){let y=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];b[Math.min(31,Math.floor(y/8))]++}let m=Math.max(...b);x.beginPath();for(let i=0;i<32;i++)x.lineTo(i*4.8,68-(b[i]/m)*62);x.strokeStyle="#fff";x.stroke()}
+setInterval(()=>{if($("histogram").style.display==="block")drawHistogram()},300);
+function updateCinema(){let mode=$("aspect").value,t=$("topLetter"),b=$("bottomLetter");if(mode==="normal"){t.style.display=b.style.display="none";return}let bars=(innerHeight-innerWidth/+mode)/2;if(bars>0){t.style.display=b.style.display="block";t.style.height=b.style.height=bars+"px";t.style.top="0";b.style.bottom="0"}else t.style.display=b.style.display="none"}
+$("aspect").onchange=updateCinema;addEventListener("resize",updateCinema);$("iso").oninput=()=>{$("isoValue").textContent=$("iso").value};
+function mimeType(){for(const m of ["video/mp4","video/webm;codecs=vp9,opus","video/webm"])if(MediaRecorder.isTypeSupported(m))return m;return""}
+$("recordButton").onclick=()=>{if(!stream){showMessage("Primeiro abra a câmera.");return}recording?stopRecording():startRecording()};
+function startRecording(){let m=mimeType();if(!m){showMessage("Gravação não suportada.");return}try{recorder=new MediaRecorder(stream,{mimeType:m,videoBitsPerSecond:+$("bitrate").value})}catch(e){recorder=new MediaRecorder(stream)}recordedChunks=[];recorder.ondataavailable=e=>{if(e.data.size)recordedChunks.push(e.data)};recorder.onstop=saveRecording;recorder.start(1000);recording=true;document.body.classList.add("recording");$("recordText").textContent="PARAR";recordingStart=Date.now();timerInterval=setInterval(updateTimer,250);setStatus("🔴 Gravando")}
+function updateTimer(){let s=Math.floor((Date.now()-recordingStart)/1000),m=Math.floor(s/60);s%=60;$("timer").textContent=String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")}
+function stopRecording(){if(recorder&&recording)recorder.stop();recording=false;document.body.classList.remove("recording");$("recordText").textContent="REC";clearInterval(timerInterval);setStatus("Processando vídeo...")}
+function saveRecording(){let type=recorder.mimeType||"video/webm",blob=new Blob(recordedChunks,{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="CINE_"+new Date().toISOString().replace(/[:.]/g,"-")+"."+(type.includes("mp4")?"mp4":"webm");a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);setStatus("Vídeo salvo")}
+updateCinema();
+</script>
+</body>
+</html>
