@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -24,11 +23,11 @@
             overflow: hidden;
         }
 
-        /* Área de Visualização da Câmera (Viewfinder) */
+        /* Visor Total da Câmera */
         .viewfinder {
             position: relative;
             flex: 1;
-            background-color: #0d0d0d;
+            background-color: #000;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -39,9 +38,10 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: filter 0.1s linear; /* Suaviza a troca de ISO/Exposição */
         }
 
-        /* Grade da Regra dos Terços */
+        /* Grade dos Terços */
         .grid-layer {
             position: absolute;
             top: 0;
@@ -55,47 +55,47 @@
         }
 
         .grid-cell {
-            border: 0.5px solid rgba(255, 255, 255, 0.15);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* HUD Superior */
+        /* HUD Superior Minimalista */
         .hud-top {
             position: absolute;
-            top: 16px;
-            left: 16px;
-            right: 16px;
+            top: 12px;
+            left: 12px;
+            right: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 0, 0, 0.65);
-            padding: 10px 18px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 14px;
+            border-radius: 30px;
+            backdrop-filter: blur(8px);
             z-index: 10;
         }
 
         .brand-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
-            letter-spacing: 2.5px;
-            color: #d1d1d1;
+            letter-spacing: 2px;
+            color: #ccc;
         }
 
         .status-recording {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             color: #ff3b30;
             font-weight: 700;
-            font-size: 13px;
+            font-size: 12px;
             font-family: monospace;
             opacity: 0;
             transition: opacity 0.2s ease;
         }
 
         .rec-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             background-color: #ff3b30;
             border-radius: 50%;
             animation: pulse 1s infinite;
@@ -107,74 +107,101 @@
             100% { opacity: 1; }
         }
 
-        .format-badge {
-            font-size: 11px;
-            font-weight: 600;
-            color: #888888;
-            letter-spacing: 1px;
-        }
-
-        /* Painel Inferior de Controles Manuais */
-        .controls-panel {
-            background-color: #080808;
-            border-top: 1px solid #1a1a1a;
-            padding: 20px 24px 28px 24px;
+        /* Painel Flutuante de Controles (Escondido por padrão) */
+        .controls-drawer {
+            position: absolute;
+            bottom: 85px;
+            left: 12px;
+            right: 12px;
+            background: rgba(10, 10, 10, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 16px;
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
+            z-index: 20;
+            transform: translateY(150%);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .controls-drawer.open {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .control-item {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
         }
 
         .control-header {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
-            letter-spacing: 1.5px;
-            color: #777777;
+            letter-spacing: 1px;
+            color: #aaa;
         }
 
         .control-value {
-            color: #ffffff;
+            color: #00e5ff;
             font-family: monospace;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         input[type="range"] {
             -webkit-appearance: none;
             width: 100%;
-            height: 4px;
-            background: #222222;
+            height: 3px;
+            background: #333;
             border-radius: 2px;
             outline: none;
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             background: #ffffff;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* Botão de Gravação (Estilo Obturador) */
-        .action-area {
+        /* Barra Inferior (Dock de Ação) */
+        .action-dock {
+            position: absolute;
+            bottom: 12px;
+            left: 0;
+            right: 0;
             display: flex;
-            justify-content: center;
+            justify-content: space-around;
             align-items: center;
-            padding-top: 6px;
+            padding: 0 20px;
+            z-index: 30;
+        }
+
+        .btn-toggle-controls {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            backdrop-filter: blur(8px);
+            cursor: pointer;
         }
 
         .btn-record {
-            width: 68px;
-            height: 68px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             background: transparent;
             border: 3px solid #ffffff;
@@ -183,15 +210,14 @@
             justify-content: center;
             cursor: pointer;
             outline: none;
-            transition: border-color 0.2s ease;
         }
 
         .btn-record-core {
-            width: 52px;
-            height: 52px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: #ff3b30;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
 
         .btn-record.is-recording {
@@ -199,19 +225,23 @@
         }
 
         .btn-record.is-recording .btn-record-core {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+        }
+
+        .dock-spacer {
+            width: 80px; /* Equilibra o botão de controles */
         }
     </style>
 </head>
 <body>
 
-    <!-- Visor da Câmera -->
+    <!-- Visor de Câmera -->
     <div class="viewfinder">
         <video id="preview" autoplay playsinline muted></video>
 
-        <!-- Regra dos Terços -->
+        <!-- Grade -->
         <div class="grid-layer">
             <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
             <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
@@ -225,45 +255,48 @@
                 <div class="rec-dot"></div>
                 <span id="timerDisplay">00:00</span>
             </div>
-            <span class="format-badge">4K • 24 FPS</span>
+            <span style="font-size:10px; color:#888;">RAW HD</span>
         </div>
-    </div>
 
-    <!-- Painel de Ajustes Manuais -->
-    <div class="controls-panel">
-        
-        <!-- Controle de ISO -->
-        <div class="control-item">
-            <div class="control-header">
-                <span>ISO</span>
-                <span class="control-value" id="isoDisplay">100</span>
+        <!-- Painel de Controles Manuais Retrátil -->
+        <div class="controls-drawer" id="controlsDrawer">
+            <!-- ISO -->
+            <div class="control-item">
+                <div class="control-header">
+                    <span>ISO (SENSIBILIDADE)</span>
+                    <span class="control-value" id="isoDisplay">100</span>
+                </div>
+                <input type="range" id="isoSlider" min="100" max="3200" step="100" value="100">
             </div>
-            <input type="range" id="isoSlider" min="100" max="3200" step="100" value="100">
-        </div>
 
-        <!-- Controle de Obturador (Shutter) -->
-        <div class="control-item">
-            <div class="control-header">
-                <span>SHUTTER SPEED</span>
-                <span class="control-value" id="shutterDisplay">1/48 s</span>
+            <!-- OBTURADOR -->
+            <div class="control-item">
+                <div class="control-header">
+                    <span>SHUTTER SPEED</span>
+                    <span class="control-value" id="shutterDisplay">1/48 s</span>
+                </div>
+                <input type="range" id="shutterSlider" min="24" max="1000" step="1" value="48">
             </div>
-            <input type="range" id="shutterSlider" min="24" max="1000" step="1" value="48">
-        </div>
 
-        <!-- Controle de Foco Manual -->
-        <div class="control-item">
-            <div class="control-header">
-                <span>FOCO MANUAL</span>
-                <span class="control-value" id="focusDisplay">50%</span>
+            <!-- FOCO MANUAL -->
+            <div class="control-item">
+                <div class="control-header">
+                    <span>FOCO MANUAL</span>
+                    <span class="control-value" id="focusDisplay">50%</span>
+                </div>
+                <input type="range" id="focusSlider" min="0" max="100" step="1" value="50">
             </div>
-            <input type="range" id="focusSlider" min="0" max="100" step="1" value="50">
         </div>
 
-        <!-- Botão Principal de Gravação -->
-        <div class="action-area">
-            <button class="btn-record" id="recordButton" aria-label="Gravar Vídeo">
+        <!-- Barra Inferior -->
+        <div class="action-dock">
+            <button class="btn-toggle-controls" id="toggleControlsBtn">PRO SETTINGS</button>
+            
+            <button class="btn-record" id="recordButton">
                 <div class="btn-record-core"></div>
             </button>
+
+            <div class="dock-spacer"></div>
         </div>
     </div>
 
@@ -272,6 +305,8 @@
         const recordButton = document.getElementById('recordButton');
         const recordingBadge = document.getElementById('recordingBadge');
         const timerDisplay = document.getElementById('timerDisplay');
+        const controlsDrawer = document.getElementById('controlsDrawer');
+        const toggleControlsBtn = document.getElementById('toggleControlsBtn');
 
         const isoSlider = document.getElementById('isoSlider');
         const isoDisplay = document.getElementById('isoDisplay');
@@ -286,36 +321,59 @@
         let timerInterval = null;
         let secondsElapsed = 0;
 
-        // Inicia a câmera usando a API MediaDevices
+        // Inicia Câmera
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: "environment",
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    },
+                    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
                     audio: true
                 });
-
                 preview.srcObject = stream;
                 mediaRecorder = new MediaRecorder(stream);
 
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data && event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                    }
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) recordedChunks.push(e.data);
                 };
-
                 mediaRecorder.onstop = exportVideo;
-
             } catch (error) {
-                console.error("Erro ao acessar câmera e áudio:", error);
-                alert("Para o Cine Manual funcionar, você precisa conceder permissão de acesso à câmera e ao microfone.");
+                alert("Permissão de câmera e áudio necessária.");
             }
         }
 
-        // Lógica do Cronômetro
+        // Alternar Visualização dos Controles
+        toggleControlsBtn.addEventListener('click', () => {
+            controlsDrawer.classList.toggle('open');
+        });
+
+        // Atualização Dinâmica da Imagem (Filtro Visual para simular ISO e Shutter no Navegador)
+        function updateCameraFilters() {
+            const iso = parseFloat(isoSlider.value);
+            const shutter = parseFloat(shutterSlider.value);
+            const focus = parseFloat(focusSlider.value);
+
+            // Simulação de ISO (brilho) + Shutter (exposição) + Foco (desfoque)
+            const brightness = (iso / 100) * (48 / shutter);
+            const blurValue = Math.abs(focus - 50) / 10; // Efeito de desfoque simulado
+
+            preview.style.filter = `brightness(${brightness}) blur(${blurValue}px)`;
+        }
+
+        isoSlider.addEventListener('input', (e) => {
+            isoDisplay.textContent = e.target.value;
+            updateCameraFilters();
+        });
+
+        shutterSlider.addEventListener('input', (e) => {
+            shutterDisplay.textContent = `1/${e.target.value} s`;
+            updateCameraFilters();
+        });
+
+        focusSlider.addEventListener('input', (e) => {
+            focusDisplay.textContent = `${e.target.value}%`;
+            updateCameraFilters();
+        });
+
+        // Cronômetro e Gravação
         function startTimer() {
             secondsElapsed = 0;
             timerDisplay.textContent = "00:00";
@@ -327,16 +385,10 @@
             }, 1000);
         }
 
-        function stopTimer() {
-            clearInterval(timerInterval);
-        }
-
-        // Alternar Estado de Gravação
         recordButton.addEventListener('click', () => {
             if (!mediaRecorder) return;
 
             if (!isRecording) {
-                // Iniciar Gravação
                 recordedChunks = [];
                 mediaRecorder.start();
                 isRecording = true;
@@ -344,45 +396,23 @@
                 recordingBadge.style.opacity = '1';
                 startTimer();
             } else {
-                // Parar Gravação
                 mediaRecorder.stop();
                 isRecording = false;
                 recordButton.classList.remove('is-recording');
                 recordingBadge.style.opacity = '0';
-                stopTimer();
+                clearInterval(timerInterval);
             }
         });
 
-        // Baixar arquivo de vídeo finalizado
         function exportVideo() {
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.style.display = 'none';
             a.href = url;
             a.download = `cinemanual_take_${Date.now()}.webm`;
-            document.body.appendChild(a);
             a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            }, 100);
         }
 
-        // Atualização dos Rótulos dos Sliders
-        isoSlider.addEventListener('input', (e) => {
-            isoDisplay.textContent = e.target.value;
-        });
-
-        shutterSlider.addEventListener('input', (e) => {
-            shutterDisplay.textContent = `1/${e.target.value} s`;
-        });
-
-        focusSlider.addEventListener('input', (e) => {
-            focusDisplay.textContent = `${e.target.value}%`;
-        });
-
-        // Inicializa
         startCamera();
     </script>
 </body>
