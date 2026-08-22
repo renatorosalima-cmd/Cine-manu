@@ -1,417 +1,392 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Cine Manual</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cine Manual A56 - Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden;
-        }
+  .phone {
+    width: min(390px, 92vw);
+    height: min(844px, 94vh);
+    background: #0D0D0D;
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 10px #111, 0 20px 60px rgba(0,0,0,0.6);
+  }
 
-        /* Container Principal */
-        .app-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
+  .viewfinder {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(255,109,0,0.08), transparent 60%),
+      linear-gradient(160deg, #2b2b2b 0%, #111 55%, #1a1a1a 100%);
+  }
+  .viewfinder::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 33.33% 33.33%;
+  }
 
-        /* Visor da Câmera */
-        .viewfinder {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            background: #000;
-        }
+  .status-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 14px 20px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #eee;
+    z-index: 5;
+  }
 
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: filter 0.1s linear;
-        }
+  .app-title-badge {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.4);
+    font-size: 10px;
+    letter-spacing: 3px;
+    z-index: 5;
+  }
 
-        /* Grade dos Terços */
-        .grid-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr 1fr;
-            z-index: 2;
-        }
+  .rec-timer {
+    position: absolute;
+    top: 66px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.5);
+    padding: 6px 12px;
+    border-radius: 20px;
+    z-index: 5;
+  }
+  .rec-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #E53935;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.2; } }
+  .rec-timer span {
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
 
-        .grid-cell {
-            border: 0.5px solid rgba(255, 255, 255, 0.12);
-        }
+  .top-tools {
+    position: absolute;
+    top: 66px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 5;
+  }
+  .tool-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 15px;
+  }
 
-        /* HUD Superior */
-        .hud-top {
-            position: relative;
-            z-index: 10;
-            margin: 12px 16px 0 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px 16px;
-            border-radius: 20px;
-            backdrop-filter: blur(8px);
-        }
+  .manual-fab {
+    position: absolute;
+    bottom: 110px;
+    left: 20px;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.55);
+    border: 2px solid #FF6D00;
+    display: flex; align-items: center; justify-content: center;
+    color: #FFB300;
+    font-size: 20px;
+    z-index: 20;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .manual-fab.open {
+    background: #FF6D00;
+    color: #fff;
+    transform: rotate(45deg);
+  }
 
-        .brand-title {
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 2px;
-            color: #e0e0e0;
-        }
+  .quick-chips {
+    position: absolute;
+    bottom: 110px;
+    left: 84px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    z-index: 15;
+    flex-wrap: wrap;
+  }
+  .chip {
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #eee;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    padding: 6px 10px;
+    border-radius: 14px;
+    white-space: nowrap;
+  }
+  .chip.manual { border-color: #FFB300; color: #FFB300; }
 
-        .status-recording {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: #ff3b30;
-            font-weight: 700;
-            font-size: 12px;
-            font-family: monospace;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
+  .controls-panel {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: rgba(20,20,20,0.92);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid #2a2a2a;
+    border-radius: 20px 20px 0 0;
+    padding: 14px 16px 12px;
+    z-index: 25;
+    transform: translateY(100%);
+    transition: transform 0.28s ease;
+  }
+  .controls-panel.open {
+    transform: translateY(0);
+  }
 
-        .rec-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #ff3b30;
-            border-radius: 50%;
-            animation: pulse 1s infinite;
-        }
+  .panel-handle {
+    width: 36px; height: 4px;
+    background: #444;
+    border-radius: 2px;
+    margin: 0 auto 12px;
+  }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.2; }
-            100% { opacity: 1; }
-        }
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 12px;
+  }
+  .tab {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #888;
+    padding-bottom: 6px;
+    position: relative;
+    cursor: pointer;
+  }
+  .tab.active { color: #FFB300; }
+  .tab.active::after {
+    content: "";
+    position: absolute;
+    bottom: -2px; left: 0; right: 0;
+    height: 2px;
+    background: #FFB300;
+    border-radius: 2px;
+  }
 
-        /* Painel Flutuante de Ajustes Manuais */
-        .controls-drawer {
-            position: absolute;
-            bottom: 100px;
-            left: 16px;
-            right: 16px;
-            background: rgba(15, 15, 15, 0.92);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 14px 16px;
-            border-radius: 16px;
-            backdrop-filter: blur(12px);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 20;
-            transform: translateY(20px);
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
-        }
+  .value-display {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 20px;
+    font-weight: bold;
+    color: #FFB300;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
 
-        .controls-drawer.open {
-            transform: translateY(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .slider-track {
+    flex: 1;
+    height: 4px;
+    background: #3a3a3a;
+    border-radius: 2px;
+    position: relative;
+  }
+  .slider-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 42%;
+    background: linear-gradient(90deg, #FF6D00, #FFB300);
+    border-radius: 2px;
+  }
+  .slider-thumb {
+    position: absolute;
+    left: 42%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #FFB300;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .slider-icon { font-size: 13px; color: #666; width: 14px; text-align: center; }
 
-        .control-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+  .mode-toggle { display: flex; justify-content: center; }
+  .toggle-pill {
+    display: flex;
+    background: #0D0D0D;
+    border-radius: 20px;
+    padding: 3px;
+    border: 1px solid #333;
+  }
+  .toggle-option {
+    padding: 5px 18px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 18px;
+    color: #888;
+    cursor: pointer;
+  }
+  .toggle-option.selected { background: #FF6D00; color: #fff; }
 
-        .control-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            color: #999;
-        }
+  .bottom-bar {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 16px 24px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .bottom-bar > * { pointer-events: auto; }
 
-        .control-value {
-            color: #00e5ff;
-            font-family: monospace;
-            font-size: 11px;
-        }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 4px;
-            background: #333;
-            border-radius: 2px;
-            outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #ffffff;
-            cursor: pointer;
-        }
-
-        /* Barra Inferior (Dock) */
-        .action-dock {
-            position: relative;
-            z-index: 30;
-            width: 100%;
-            padding-bottom: max(16px, env(safe-area-inset-bottom));
-            padding-top: 10px;
-            background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.4), transparent);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-        }
-
-        .btn-toggle-controls {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 18px;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            backdrop-filter: blur(8px);
-            cursor: pointer;
-        }
-
-        .btn-record {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: transparent;
-            border: 3px solid #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            outline: none;
-        }
-
-        .btn-record-core {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: #ff3b30;
-            transition: all 0.2s ease;
-        }
-
-        .btn-record.is-recording {
-            border-color: #ff3b30;
-        }
-
-        .btn-record.is-recording .btn-record-core {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
-        }
-
-        .dock-spacer {
-            width: 70px;
-        }
-    </style>
+  .gallery-thumb {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #444, #222);
+    border: 2px solid #333;
+  }
+  .record-btn-wrap {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: 4px solid #FF6D00;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .record-btn {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: #fff;
+    transition: all 0.2s;
+  }
+  .record-btn.recording {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: #E53935;
+  }
+  .switch-cam {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 19px;
+  }
+</style>
 </head>
 <body>
 
-    <div class="app-container">
-        <!-- Visor -->
-        <div class="viewfinder">
-            <video id="preview" autoplay playsinline muted></video>
-            <div class="grid-layer">
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-            </div>
-        </div>
+<div class="phone">
 
-        <!-- HUD Superior -->
-        <div class="hud-top">
-            <span class="brand-title">CINE MANUAL</span>
-            <div class="status-recording" id="recordingBadge">
-                <div class="rec-dot"></div>
-                <span id="timerDisplay">00:00</span>
-            </div>
-            <span style="font-size:10px; color:#888; font-family:monospace;">1080P</span>
-        </div>
+  <div class="viewfinder">
+    <div class="status-bar">
+      <span>9:41</span>
+      <span>🔋 100%</span>
+    </div>
+    <div class="app-title-badge">CINE MANUAL A56</div>
 
-        <!-- Painel de Controles Manuais -->
-        <div class="controls-drawer" id="controlsDrawer">
-            <div class="control-item">
-                <div class="control-header">
-                    <span>ISO (BRILHO SIMULADO)</span>
-                    <span class="control-value" id="isoDisplay">100</span>
-                </div>
-                <input type="range" id="isoSlider" min="100" max="3200" step="100" value="100">
-            </div>
-
-            <div class="control-item">
-                <div class="control-header">
-                    <span>SHUTTER SPEED</span>
-                    <span class="control-value" id="shutterDisplay">1/48 s</span>
-                </div>
-                <input type="range" id="shutterSlider" min="24" max="1000" step="1" value="48">
-            </div>
-
-            <div class="control-item">
-                <div class="control-header">
-                    <span>FOCO (DESFOQUE SIMULADO)</span>
-                    <span class="control-value" id="focusDisplay">50%</span>
-                </div>
-                <input type="range" id="focusSlider" min="0" max="100" step="1" value="50">
-            </div>
-        </div>
-
-        <!-- Barra Inferior -->
-        <div class="action-dock">
-            <button class="btn-toggle-controls" id="toggleControlsBtn">AJUSTES</button>
-            <button class="btn-record" id="recordButton">
-                <div class="btn-record-core"></div>
-            </button>
-            <div class="dock-spacer"></div>
-        </div>
+    <div class="rec-timer">
+      <div class="rec-dot"></div>
+      <span>00:14:07</span>
     </div>
 
-    <script>
-        const preview = document.getElementById('preview');
-        const recordButton = document.getElementById('recordButton');
-        const recordingBadge = document.getElementById('recordingBadge');
-        const timerDisplay = document.getElementById('timerDisplay');
-        const controlsDrawer = document.getElementById('controlsDrawer');
-        const toggleControlsBtn = document.getElementById('toggleControlsBtn');
+    <div class="top-tools">
+      <div class="tool-icon">4K</div>
+      <div class="tool-icon">⚡</div>
+      <div class="tool-icon">⚙️</div>
+    </div>
+  </div>
 
-        const isoSlider = document.getElementById('isoSlider');
-        const isoDisplay = document.getElementById('isoDisplay');
-        const shutterSlider = document.getElementById('shutterSlider');
-        const shutterDisplay = document.getElementById('shutterDisplay');
-        const focusSlider = document.getElementById('focusSlider');
-        const focusDisplay = document.getElementById('focusDisplay');
+  <div class="quick-chips">
+    <div class="chip manual">ISO 640</div>
+    <div class="chip">1/120s</div>
+    <div class="chip">AF</div>
+    <div class="chip">WB AUTO</div>
+  </div>
 
-        let mediaRecorder = null;
-        let recordedChunks = [];
-        let isRecording = false;
-        let timerInterval = null;
-        let secondsElapsed = 0;
+  <div class="manual-fab" id="fabToggle" onclick="togglePanel()">
+    <span>+</span>
+  </div>
 
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
-                    audio: true
-                });
-                preview.srcObject = stream;
-                mediaRecorder = new MediaRecorder(stream);
+  <div class="controls-panel" id="controlsPanel">
+    <div class="panel-handle"></div>
+    <div class="tabs">
+      <div class="tab active">ISO</div>
+      <div class="tab">OBTURADOR</div>
+      <div class="tab">FOCO</div>
+      <div class="tab">WB</div>
+    </div>
+    <div class="value-display">ISO 640</div>
+    <div class="slider-row">
+      <span class="slider-icon">−</span>
+      <div class="slider-track">
+        <div class="slider-fill"></div>
+        <div class="slider-thumb"></div>
+      </div>
+      <span class="slider-icon">+</span>
+    </div>
+    <div class="mode-toggle">
+      <div class="toggle-pill">
+        <div class="toggle-option">AUTO</div>
+        <div class="toggle-option selected">MANUAL</div>
+      </div>
+    </div>
+  </div>
 
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data && e.data.size > 0) recordedChunks.push(e.data);
-                };
-                mediaRecorder.onstop = exportVideo;
-            } catch (error) {
-                alert("Permissão de câmera e microfone necessária.");
-            }
-        }
+  <div class="bottom-bar">
+    <div class="gallery-thumb"></div>
+    <div class="record-btn-wrap">
+      <div class="record-btn recording"></div>
+    </div>
+    <div class="switch-cam">⟳</div>
+  </div>
 
-        toggleControlsBtn.addEventListener('click', () => {
-            controlsDrawer.classList.toggle('open');
-        });
+</div>
 
-        function updateCameraFilters() {
-            const iso = parseFloat(isoSlider.value);
-            const shutter = parseFloat(shutterSlider.value);
-            const focus = parseFloat(focusSlider.value);
+<script>
+  function togglePanel() {
+    document.getElementById('controlsPanel').classList.toggle('open');
+    document.getElementById('fabToggle').classList.toggle('open');
+  }
+</script>
 
-            const brightness = (iso / 100) * (48 / shutter);
-            const blurValue = Math.abs(focus - 50) / 10;
-
-            preview.style.filter = `brightness(${brightness}) blur(${blurValue}px)`;
-        }
-
-        isoSlider.addEventListener('input', (e) => {
-            isoDisplay.textContent = e.target.value;
-            updateCameraFilters();
-        });
-
-        shutterSlider.addEventListener('input', (e) => {
-            shutterDisplay.textContent = `1/${e.target.value} s`;
-            updateCameraFilters();
-        });
-
-        focusSlider.addEventListener('input', (e) => {
-            focusDisplay.textContent = `${e.target.value}%`;
-            updateCameraFilters();
-        });
-
-        function startTimer() {
-            secondsElapsed = 0;
-            timerDisplay.textContent = "00:00";
-            timerInterval = setInterval(() => {
-                secondsElapsed++;
-                const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
-                const secs = String(secondsElapsed % 60).padStart(2, '0');
-                timerDisplay.textContent = `${mins}:${secs}`;
-            }, 1000);
-        }
-
-        recordButton.addEventListener('click', () => {
-            if (!mediaRecorder) return;
-
-            if (!isRecording) {
-                recordedChunks = [];
-                mediaRecorder.start();
-                isRecording = true;
-                recordButton.classList.add('is-recording');
-                recordingBadge.style.opacity = '1';
-                startTimer();
-            } else {
-                mediaRecorder.stop();
-                isRecording = false;
-                recordButton.classList.remove('is-recording');
-                recordingBadge.style.opacity = '0';
-                clearInterval(timerInterval);
-            }
-        });
-
-        function exportVideo() {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `cinemanual_take_${Date.now()}.webm`;
-            a.click();
-        }
-
-        startCamera();
-    </script>
 </body>
 </html>
