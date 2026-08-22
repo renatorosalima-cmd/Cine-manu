@@ -1,1 +1,389 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cine Manual</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Área de Visualização da Câmera (Viewfinder) */
+        .viewfinder {
+            position: relative;
+            flex: 1;
+            background-color: #0d0d0d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Grade da Regra dos Terços */
+        .grid-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+        }
+
+        .grid-cell {
+            border: 0.5px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* HUD Superior */
+        .hud-top {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 10px 18px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .brand-title {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 2.5px;
+            color: #d1d1d1;
+        }
+
+        .status-recording {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ff3b30;
+            font-weight: 700;
+            font-size: 13px;
+            font-family: monospace;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .rec-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #ff3b30;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+
+        .format-badge {
+            font-size: 11px;
+            font-weight: 600;
+            color: #888888;
+            letter-spacing: 1px;
+        }
+
+        /* Painel Inferior de Controles Manuais */
+        .controls-panel {
+            background-color: #080808;
+            border-top: 1px solid #1a1a1a;
+            padding: 20px 24px 28px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #777777;
+        }
+
+        .control-value {
+            color: #ffffff;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #222222;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* Botão de Gravação (Estilo Obturador) */
+        .action-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-top: 6px;
+        }
+
+        .btn-record {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: transparent;
+            border: 3px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .btn-record-core {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: #ff3b30;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-record.is-recording {
+            border-color: #ff3b30;
+        }
+
+        .btn-record.is-recording .btn-record-core {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Visor da Câmera -->
+    <div class="viewfinder">
+        <video id="preview" autoplay playsinline muted></video>
+
+        <!-- Regra dos Terços -->
+        <div class="grid-layer">
+            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+        </div>
+
+        <!-- HUD Superior -->
+        <div class="hud-top">
+            <span class="brand-title">CINE MANUAL</span>
+            <div class="status-recording" id="recordingBadge">
+                <div class="rec-dot"></div>
+                <span id="timerDisplay">00:00</span>
+            </div>
+            <span class="format-badge">4K • 24 FPS</span>
+        </div>
+    </div>
+
+    <!-- Painel de Ajustes Manuais -->
+    <div class="controls-panel">
+        
+        <!-- Controle de ISO -->
+        <div class="control-item">
+            <div class="control-header">
+                <span>ISO</span>
+                <span class="control-value" id="isoDisplay">100</span>
+            </div>
+            <input type="range" id="isoSlider" min="100" max="3200" step="100" value="100">
+        </div>
+
+        <!-- Controle de Obturador (Shutter) -->
+        <div class="control-item">
+            <div class="control-header">
+                <span>SHUTTER SPEED</span>
+                <span class="control-value" id="shutterDisplay">1/48 s</span>
+            </div>
+            <input type="range" id="shutterSlider" min="24" max="1000" step="1" value="48">
+        </div>
+
+        <!-- Controle de Foco Manual -->
+        <div class="control-item">
+            <div class="control-header">
+                <span>FOCO MANUAL</span>
+                <span class="control-value" id="focusDisplay">50%</span>
+            </div>
+            <input type="range" id="focusSlider" min="0" max="100" step="1" value="50">
+        </div>
+
+        <!-- Botão Principal de Gravação -->
+        <div class="action-area">
+            <button class="btn-record" id="recordButton" aria-label="Gravar Vídeo">
+                <div class="btn-record-core"></div>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const preview = document.getElementById('preview');
+        const recordButton = document.getElementById('recordButton');
+        const recordingBadge = document.getElementById('recordingBadge');
+        const timerDisplay = document.getElementById('timerDisplay');
+
+        const isoSlider = document.getElementById('isoSlider');
+        const isoDisplay = document.getElementById('isoDisplay');
+        const shutterSlider = document.getElementById('shutterSlider');
+        const shutterDisplay = document.getElementById('shutterDisplay');
+        const focusSlider = document.getElementById('focusSlider');
+        const focusDisplay = document.getElementById('focusDisplay');
+
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+
+        // Inicia a câmera usando a API MediaDevices
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment",
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: true
+                });
+
+                preview.srcObject = stream;
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data && event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = exportVideo;
+
+            } catch (error) {
+                console.error("Erro ao acessar câmera e áudio:", error);
+                alert("Para o Cine Manual funcionar, você precisa conceder permissão de acesso à câmera e ao microfone.");
+            }
+        }
+
+        // Lógica do Cronômetro
+        function startTimer() {
+            secondsElapsed = 0;
+            timerDisplay.textContent = "00:00";
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                const secs = String(secondsElapsed % 60).padStart(2, '0');
+                timerDisplay.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        // Alternar Estado de Gravação
+        recordButton.addEventListener('click', () => {
+            if (!mediaRecorder) return;
+
+            if (!isRecording) {
+                // Iniciar Gravação
+                recordedChunks = [];
+                mediaRecorder.start();
+                isRecording = true;
+                recordButton.classList.add('is-recording');
+                recordingBadge.style.opacity = '1';
+                startTimer();
+            } else {
+                // Parar Gravação
+                mediaRecorder.stop();
+                isRecording = false;
+                recordButton.classList.remove('is-recording');
+                recordingBadge.style.opacity = '0';
+                stopTimer();
+            }
+        });
+
+        // Baixar arquivo de vídeo finalizado
+        function exportVideo() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `cinemanual_take_${Date.now()}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+        // Atualização dos Rótulos dos Sliders
+        isoSlider.addEventListener('input', (e) => {
+            isoDisplay.textContent = e.target.value;
+        });
+
+        shutterSlider.addEventListener('input', (e) => {
+            shutterDisplay.textContent = `1/${e.target.value} s`;
+        });
+
+        focusSlider.addEventListener('input', (e) => {
+            focusDisplay.textContent = `${e.target.value}%`;
+        });
+
+        // Inicializa
+        startCamera();
+    </script>
+</body>
+</html>
