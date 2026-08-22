@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cine Manual</title>
     <style>
         * {
@@ -13,32 +13,41 @@
             -webkit-user-select: none;
         }
 
-        body {
-            background-color: #000000;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
         }
 
-        /* Visor Total da Câmera */
-        .viewfinder {
+        /* Container Principal */
+        .app-container {
             position: relative;
-            flex: 1;
-            background-color: #000;
+            width: 100vw;
+            height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Visor da Câmera */
+        .viewfinder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: #000;
         }
 
         video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: filter 0.1s linear; /* Suaviza a troca de ISO/Exposição */
+            transition: filter 0.1s linear;
         }
 
         /* Grade dos Terços */
@@ -52,33 +61,32 @@
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             grid-template-rows: 1fr 1fr 1fr;
+            z-index: 2;
         }
 
         .grid-cell {
-            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            border: 0.5px solid rgba(255, 255, 255, 0.12);
         }
 
-        /* HUD Superior Minimalista */
+        /* HUD Superior */
         .hud-top {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            right: 12px;
+            position: relative;
+            z-index: 10;
+            margin: 12px 16px 0 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 8px 14px;
-            border-radius: 30px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 16px;
+            border-radius: 20px;
             backdrop-filter: blur(8px);
-            z-index: 10;
         }
 
         .brand-title {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 800;
             letter-spacing: 2px;
-            color: #ccc;
+            color: #e0e0e0;
         }
 
         .status-recording {
@@ -94,8 +102,8 @@
         }
 
         .rec-dot {
-            width: 7px;
-            height: 7px;
+            width: 8px;
+            height: 8px;
             background-color: #ff3b30;
             border-radius: 50%;
             animation: pulse 1s infinite;
@@ -107,25 +115,25 @@
             100% { opacity: 1; }
         }
 
-        /* Painel Flutuante de Controles (Escondido por padrão) */
+        /* Painel Flutuante de Ajustes Manuais */
         .controls-drawer {
             position: absolute;
-            bottom: 85px;
-            left: 12px;
-            right: 12px;
-            background: rgba(10, 10, 10, 0.85);
+            bottom: 100px;
+            left: 16px;
+            right: 16px;
+            background: rgba(15, 15, 15, 0.92);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 16px;
+            padding: 14px 16px;
             border-radius: 16px;
             backdrop-filter: blur(12px);
             display: flex;
             flex-direction: column;
             gap: 12px;
             z-index: 20;
-            transform: translateY(150%);
+            transform: translateY(20px);
             opacity: 0;
-            transition: all 0.3s cubic-bezier(0.1, 0.9, 0.2, 1);
             pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
         }
 
         .controls-drawer.open {
@@ -146,19 +154,19 @@
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 1px;
-            color: #aaa;
+            color: #999;
         }
 
         .control-value {
             color: #00e5ff;
             font-family: monospace;
-            font-size: 12px;
+            font-size: 11px;
         }
 
         input[type="range"] {
             -webkit-appearance: none;
             width: 100%;
-            height: 3px;
+            height: 4px;
             background: #333;
             border-radius: 2px;
             outline: none;
@@ -173,26 +181,26 @@
             cursor: pointer;
         }
 
-        /* Barra Inferior (Dock de Ação) */
+        /* Barra Inferior (Dock) */
         .action-dock {
-            position: absolute;
-            bottom: 12px;
-            left: 0;
-            right: 0;
+            position: relative;
+            z-index: 30;
+            width: 100%;
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
+            padding-top: 10px;
+            background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.4), transparent);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding: 0 20px;
-            z-index: 30;
         }
 
         .btn-toggle-controls {
             background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             color: #fff;
-            padding: 10px 16px;
-            border-radius: 20px;
-            font-size: 11px;
+            padding: 8px 14px;
+            border-radius: 18px;
+            font-size: 10px;
             font-weight: 700;
             letter-spacing: 1px;
             backdrop-filter: blur(8px);
@@ -200,8 +208,8 @@
         }
 
         .btn-record {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             background: transparent;
             border: 3px solid #ffffff;
@@ -213,8 +221,8 @@
         }
 
         .btn-record-core {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: #ff3b30;
             transition: all 0.2s ease;
@@ -225,27 +233,27 @@
         }
 
         .btn-record.is-recording .btn-record-core {
-            width: 22px;
-            height: 22px;
-            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
         }
 
         .dock-spacer {
-            width: 80px; /* Equilibra o botão de controles */
+            width: 70px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Visor de Câmera -->
-    <div class="viewfinder">
-        <video id="preview" autoplay playsinline muted></video>
-
-        <!-- Grade -->
-        <div class="grid-layer">
-            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
-            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+    <div class="app-container">
+        <!-- Visor -->
+        <div class="viewfinder">
+            <video id="preview" autoplay playsinline muted></video>
+            <div class="grid-layer">
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+                <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+            </div>
         </div>
 
         <!-- HUD Superior -->
@@ -255,21 +263,19 @@
                 <div class="rec-dot"></div>
                 <span id="timerDisplay">00:00</span>
             </div>
-            <span style="font-size:10px; color:#888;">RAW HD</span>
+            <span style="font-size:10px; color:#888; font-family:monospace;">1080P</span>
         </div>
 
-        <!-- Painel de Controles Manuais Retrátil -->
+        <!-- Painel de Controles Manuais -->
         <div class="controls-drawer" id="controlsDrawer">
-            <!-- ISO -->
             <div class="control-item">
                 <div class="control-header">
-                    <span>ISO (SENSIBILIDADE)</span>
+                    <span>ISO (BRILHO SIMULADO)</span>
                     <span class="control-value" id="isoDisplay">100</span>
                 </div>
                 <input type="range" id="isoSlider" min="100" max="3200" step="100" value="100">
             </div>
 
-            <!-- OBTURADOR -->
             <div class="control-item">
                 <div class="control-header">
                     <span>SHUTTER SPEED</span>
@@ -278,10 +284,9 @@
                 <input type="range" id="shutterSlider" min="24" max="1000" step="1" value="48">
             </div>
 
-            <!-- FOCO MANUAL -->
             <div class="control-item">
                 <div class="control-header">
-                    <span>FOCO MANUAL</span>
+                    <span>FOCO (DESFOQUE SIMULADO)</span>
                     <span class="control-value" id="focusDisplay">50%</span>
                 </div>
                 <input type="range" id="focusSlider" min="0" max="100" step="1" value="50">
@@ -290,12 +295,10 @@
 
         <!-- Barra Inferior -->
         <div class="action-dock">
-            <button class="btn-toggle-controls" id="toggleControlsBtn">PRO SETTINGS</button>
-            
+            <button class="btn-toggle-controls" id="toggleControlsBtn">AJUSTES</button>
             <button class="btn-record" id="recordButton">
                 <div class="btn-record-core"></div>
             </button>
-
             <div class="dock-spacer"></div>
         </div>
     </div>
@@ -321,7 +324,6 @@
         let timerInterval = null;
         let secondsElapsed = 0;
 
-        // Inicia Câmera
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -336,24 +338,21 @@
                 };
                 mediaRecorder.onstop = exportVideo;
             } catch (error) {
-                alert("Permissão de câmera e áudio necessária.");
+                alert("Permissão de câmera e microfone necessária.");
             }
         }
 
-        // Alternar Visualização dos Controles
         toggleControlsBtn.addEventListener('click', () => {
             controlsDrawer.classList.toggle('open');
         });
 
-        // Atualização Dinâmica da Imagem (Filtro Visual para simular ISO e Shutter no Navegador)
         function updateCameraFilters() {
             const iso = parseFloat(isoSlider.value);
             const shutter = parseFloat(shutterSlider.value);
             const focus = parseFloat(focusSlider.value);
 
-            // Simulação de ISO (brilho) + Shutter (exposição) + Foco (desfoque)
             const brightness = (iso / 100) * (48 / shutter);
-            const blurValue = Math.abs(focus - 50) / 10; // Efeito de desfoque simulado
+            const blurValue = Math.abs(focus - 50) / 10;
 
             preview.style.filter = `brightness(${brightness}) blur(${blurValue}px)`;
         }
@@ -373,7 +372,6 @@
             updateCameraFilters();
         });
 
-        // Cronômetro e Gravação
         function startTimer() {
             secondsElapsed = 0;
             timerDisplay.textContent = "00:00";
