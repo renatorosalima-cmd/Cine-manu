@@ -80,30 +80,40 @@
   .chip:active { transform: scale(0.95); }
 
   .controls-panel { position: absolute; background: rgba(20,20,20,0.95); backdrop-filter: blur(6px);
-      z-index: 25; transition: transform 0.28s ease; }
+      z-index: 25; transition: transform 0.28s ease; display: flex; flex-direction: column; justify-content: center; }
   .panel-close { position: absolute; top: 10px; right: 14px; color: #888; font-size: 20px; cursor: pointer; z-index: 2; }
   .panel-handle { background: #444; border-radius: 2px; }
   .tabs { display: flex; justify-content: center; }
   .tab { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #888; padding: 4px 2px 8px;
       position: relative; cursor: pointer; }
-  .tab.active { color: #FFB300; }
+  .tab.active { color: var(--tab-color, #FFB300); }
   .tab.active::after { content: ""; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px;
-      background: #FFB300; border-radius: 2px; }
-  .value-display { text-align: center; font-family: 'Courier New', monospace; font-size: 20px;
-      font-weight: bold; color: #FFB300; letter-spacing: 1px; }
+      background: var(--tab-color, #FFB300); border-radius: 2px; }
+  .value-display { text-align: center; font-family: 'Courier New', monospace; font-size: 22px;
+      font-weight: bold; color: var(--accent, #FFB300); letter-spacing: 1px; }
+  .sim-note { text-align: center; font-size: 9px; color: #666; margin: 2px 0 6px; line-height: 1.4; }
 
-  .slider-row { display: flex; align-items: center; gap: 10px; }
-  .slider-track { flex: 1; background: #3a3a3a; border-radius: 3px; position: relative; cursor: pointer; touch-action: none; }
-  .slider-fill { position: absolute; background: linear-gradient(90deg, #FF6D00, #FFB300); border-radius: 3px; pointer-events: none; }
-  .slider-thumb { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: #fff;
-      border: 3px solid #FFB300; box-shadow: 0 2px 8px rgba(0,0,0,0.5); touch-action: none; cursor: grab; }
-  .slider-thumb:active { cursor: grabbing; }
-  .slider-icon { font-size: 14px; color: #777; width: 16px; text-align: center; }
+  /* ---------- Dial giratório (estilo ProShot) ---------- */
+  .dial-wrap { display: flex; justify-content: center; align-items: center; margin: 6px 0 12px; }
+  .dial { position: relative; width: 128px; height: 128px; border-radius: 50%; touch-action: none; cursor: grab; }
+  .dial:active { cursor: grabbing; }
+  .dial-track { position: absolute; inset: 0; border-radius: 50%; border: 7px solid #2c2c2c; }
+  .dial-fill { position: absolute; inset: 0; border-radius: 50%;
+      background: conic-gradient(var(--accent, #FFB300) calc(var(--deg, 0deg)), transparent 0deg);
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 7px));
+              mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 7px));
+      pointer-events: none; }
+  .dial-knob { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff;
+      border: 3px solid var(--accent, #FFB300); top: 3px; left: 55px; box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      pointer-events: none; }
+  .dial-center { position: absolute; inset: 0; margin: auto; width: 8px; height: 8px; border-radius: 50%;
+      background: #3a3a3a; pointer-events: none; }
+  .dial-hint { text-align: center; font-size: 10px; color: #666; margin-bottom: 6px; letter-spacing: 0.5px; }
 
   .mode-toggle { display: flex; justify-content: center; }
   .toggle-pill { display: flex; background: #0D0D0D; border-radius: 20px; padding: 3px; border: 1px solid #333; }
   .toggle-option { padding: 5px 18px; font-size: 11px; font-weight: 700; border-radius: 18px; color: #888; cursor: pointer; }
-  .toggle-option.selected { background: #FF6D00; color: #fff; }
+  .toggle-option.selected { background: var(--accent, #FF6D00); color: #000; }
 
   .gallery-thumb { border-radius: 10px; background: linear-gradient(135deg, #444, #222); border: 2px solid #333; cursor: pointer; }
   .record-btn-wrap { border-radius: 50%; border: 4px solid #FF6D00; display: flex; align-items: center;
@@ -154,10 +164,7 @@
   .panel-handle { width: 36px; height: 4px; margin: 0 auto 12px; }
   .tabs { gap: 22px; margin-bottom: 12px; }
   .value-display { margin-bottom: 10px; }
-  .slider-row { height: 30px; margin-bottom: 10px; }
-  .slider-track { height: 6px; width: 100%; }
-  .slider-fill { left: 0; top: 0; bottom: 0; }
-  .slider-thumb { top: 50%; }
+  .dial-wrap { margin: 4px 0 10px; }
 
   /* ============================================================ PAISAGEM ============================================================ */
   @media (orientation: landscape) {
@@ -178,8 +185,6 @@
     .panel-handle { display: none; }
     .tabs { flex-direction: column; gap: 16px; margin-bottom: 20px; align-items: center; }
     .value-display { margin-bottom: 18px; font-size: 22px; }
-    .slider-row { flex-direction: column; width: 30px; height: 180px; margin: 0 auto 18px; }
-    .slider-track { width: 6px; height: 100%; }
   }
 </style>
 </head>
@@ -230,13 +235,15 @@
       <div class="tab" data-control="wb">WB</div>
     </div>
     <div class="value-display" id="valueDisplay">ISO 640</div>
-    <div class="slider-row">
-      <span class="slider-icon">−</span>
-      <div class="slider-track" id="sliderTrack">
-        <div class="slider-fill" id="sliderFill"></div>
-        <div class="slider-thumb" id="sliderThumb"></div>
+    <div class="sim-note">Pré-visualização de interface — controle real do sensor exige o app Android nativo</div>
+    <div class="dial-hint">GIRE PARA AJUSTAR</div>
+    <div class="dial-wrap">
+      <div class="dial" id="dial">
+        <div class="dial-track"></div>
+        <div class="dial-fill" id="dialFill"></div>
+        <div class="dial-knob" id="dialKnob"></div>
+        <div class="dial-center"></div>
       </div>
-      <span class="slider-icon">+</span>
     </div>
     <div class="mode-toggle">
       <div class="toggle-pill" id="togglePill">
@@ -265,10 +272,28 @@
 
   const video = document.getElementById('cameraFeed');
   const cameraMsg = document.getElementById('cameraMsg');
-  async function startCamera() {
+  let currentStream = null;
+
+  async function startCamera(constraints) {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      // Encerra o stream anterior antes de pedir um novo (evita travar a câmera)
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: Object.assign({ facingMode: { ideal: 'environment' } }, constraints || {}),
+        audio: false
+      });
+      currentStream = stream;
       video.srcObject = stream; video.style.display = 'block'; cameraMsg.style.display = 'none';
+
+      // Mostra a resolução REAL entregue pela câmera (o navegador pode não
+      // conseguir a resolução pedida e cair para a mais próxima suportada)
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        const settings = track.getSettings();
+        console.log('Resolução real da câmera:', settings.width + 'x' + settings.height);
+      }
     } catch (err) {
       cameraMsg.textContent = 'Câmera não disponível neste navegador/contexto (' + err.message + '). O resto da interface funciona normalmente.';
     }
@@ -331,15 +356,18 @@
   const iconQuality = document.getElementById('iconQuality');
   let quality = '4K';
   const qualities = [
-    { value: '4K',    desc: '3840x2160 · 30fps' },
-    { value: '1080P', desc: '1920x1080 · 60fps' },
-    { value: '720P',  desc: '1280x720 · 60fps' }
+    { value: '4K',    desc: '3840x2160', width: 3840, height: 2160 },
+    { value: '1080P', desc: '1920x1080', width: 1920, height: 1080 },
+    { value: '720P',  desc: '1280x720',  width: 1280, height: 720 }
   ];
   iconQuality.addEventListener('click', (e) => {
     e.stopPropagation();
     openPopover(iconQuality, 'QUALIDADE DE VÍDEO', qualities.map(q => ({
       label: q.value, desc: q.desc, selected: q.value === quality,
-      onSelect: () => { quality = q.value; iconQuality.textContent = q.value; }
+      onSelect: () => {
+        quality = q.value; iconQuality.textContent = q.value;
+        startCamera({ width: { ideal: q.width }, height: { ideal: q.height } });
+      }
     })));
   });
 
@@ -390,20 +418,21 @@
   }
 
   const controls = {
-    iso:     { label: 'ISO',       min: 100,  max: 3200, pos: 0.35, chip: 'chipIso',     fmt: v => 'ISO ' + Math.round(v) },
-    shutter: { label: 'OBTURADOR', min: 30,   max: 2000, pos: 0.15, chip: 'chipShutter', fmt: v => '1/' + Math.round(v) + 's' },
-    focus:   { label: 'FOCO',      min: 0,    max: 100,  pos: 0.9,  chip: 'chipFocus',   fmt: v => v > 95 ? '∞' : (0.2 + (v/100)*5).toFixed(1) + 'm' },
-    wb:      { label: 'WB',        min: 2000, max: 9000, pos: 0.45, chip: 'chipWb',      fmt: v => 'WB ' + Math.round(v) + 'K' }
+    iso:     { label: 'ISO',       min: 100,  max: 3200, pos: 0.35, chip: 'chipIso',     color: '#FFD54F', fmt: v => 'ISO ' + Math.round(v) },
+    shutter: { label: 'OBTURADOR', min: 30,   max: 2000, pos: 0.15, chip: 'chipShutter', color: '#4FC3F7', fmt: v => '1/' + Math.round(v) + 's' },
+    focus:   { label: 'FOCO',      min: 0,    max: 100,  pos: 0.9,  chip: 'chipFocus',   color: '#81C784', fmt: v => v > 95 ? '∞' : (0.2 + (v/100)*5).toFixed(1) + 'm' },
+    wb:      { label: 'WB',        min: 2000, max: 9000, pos: 0.45, chip: 'chipWb',      color: '#CE93D8', fmt: v => 'WB ' + Math.round(v) + 'K' }
   };
   let activeControl = 'iso';
   let manualMode = { iso: true, shutter: false, focus: false, wb: false };
 
   const valueDisplay = document.getElementById('valueDisplay');
-  const sliderFill = document.getElementById('sliderFill');
-  const sliderThumb = document.getElementById('sliderThumb');
-  const sliderTrack = document.getElementById('sliderTrack');
+  const dial = document.getElementById('dial');
+  const dialFill = document.getElementById('dialFill');
+  const dialKnob = document.getElementById('dialKnob');
   const togglePill = document.getElementById('togglePill');
   const chipFps = document.getElementById('chipFps');
+  const panelEl = document.getElementById('controlsPanel');
 
   function isLandscape() { return window.matchMedia('(orientation: landscape)').matches; }
   function realValue(c) { return c.min + c.pos * (c.max - c.min); }
@@ -413,19 +442,18 @@
     const isManual = manualMode[activeControl];
 
     valueDisplay.textContent = isManual ? c.fmt(realValue(c)) : 'AUTO';
-    valueDisplay.style.color = isManual ? '#FFB300' : '#888';
+    panelEl.style.setProperty('--accent', c.color);
+    panelEl.style.setProperty('--tab-color', c.color);
 
-    const pct = c.pos * 100;
-    if (isLandscape()) {
-      sliderFill.style.left = '0'; sliderFill.style.right = '0'; sliderFill.style.top = 'auto'; sliderFill.style.bottom = '0';
-      sliderFill.style.height = pct + '%'; sliderFill.style.width = '100%';
-      sliderThumb.style.left = '50%'; sliderThumb.style.top = (100 - pct) + '%';
-    } else {
-      sliderFill.style.top = '0'; sliderFill.style.bottom = '0'; sliderFill.style.right = 'auto'; sliderFill.style.left = '0';
-      sliderFill.style.width = pct + '%'; sliderFill.style.height = '100%';
-      sliderThumb.style.left = pct + '%'; sliderThumb.style.top = '50%';
-    }
-    sliderThumb.style.transform = 'translate(-50%, -50%)';
+    // Gira o dial de acordo com a posição (0 a 1 = 0 a 300 graus, deixando
+    // um vão embaixo, como um dial analógico de câmera de verdade)
+    const deg = c.pos * 300;
+    dialFill.style.setProperty('--deg', deg + 'deg');
+    const rad = (deg - 150) * Math.PI / 180; // 0 no topo do vão (canto inferior esquerdo do arco)
+    const R = 46;
+    dialKnob.style.left = (64 + R * Math.cos(rad) - 9) + 'px';
+    dialKnob.style.top = (64 + R * Math.sin(rad) - 9) + 'px';
+    dial.style.opacity = isManual ? '1' : '0.45';
 
     togglePill.querySelectorAll('.toggle-option').forEach(opt => {
       opt.classList.toggle('selected', (opt.dataset.mode === 'manual') === isManual);
@@ -437,6 +465,8 @@
       const man = manualMode[key];
       chipEl.textContent = man ? cc.fmt(realValue(cc)) : cc.label + ' AUTO';
       chipEl.classList.toggle('manual', man);
+      chipEl.style.borderColor = man ? cc.color : 'rgba(255,255,255,0.15)';
+      chipEl.style.color = man ? cc.color : '#eee';
     });
   }
 
@@ -453,37 +483,45 @@
   });
 
   let dragging = false;
+  let lastAngle = null;
+
   function getPoint(e) {
     if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
     if (e.changedTouches && e.changedTouches.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
     return { x: e.clientX, y: e.clientY };
   }
-  function updateFromPointer(clientX, clientY) {
-    const rect = sliderTrack.getBoundingClientRect();
-    const c = controls[activeControl];
-    let fraction = isLandscape() ? 1 - (clientY - rect.top) / rect.height : (clientX - rect.left) / rect.width;
-    c.pos = Math.min(1, Math.max(0, fraction));
-    manualMode[activeControl] = true;
-    refreshUI();
+  function angleFromCenter(clientX, clientY) {
+    const rect = dial.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    return Math.atan2(clientY - cy, clientX - cx) * 180 / Math.PI;
   }
   function onDragStart(e) {
     dragging = true;
     const p = getPoint(e);
-    updateFromPointer(p.x, p.y);
+    lastAngle = angleFromCenter(p.x, p.y);
     if (e.cancelable) e.preventDefault();
   }
   function onDragMove(e) {
     if (!dragging) return;
     const p = getPoint(e);
-    updateFromPointer(p.x, p.y);
+    const angle = angleFromCenter(p.x, p.y);
+    let delta = angle - lastAngle;
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    lastAngle = angle;
+
+    const c = controls[activeControl];
+    // Sensibilidade: dá quase 2 voltas completas pra ir de um extremo ao outro
+    c.pos = Math.min(1, Math.max(0, c.pos + delta / 620));
+    manualMode[activeControl] = true;
+    refreshUI();
     if (e.cancelable) e.preventDefault();
   }
-  function onDragEnd() { dragging = false; }
+  function onDragEnd() { dragging = false; lastAngle = null; }
 
-  [sliderTrack, sliderThumb].forEach(el => {
-    el.addEventListener('touchstart', onDragStart, { passive: false });
-    el.addEventListener('mousedown', onDragStart);
-  });
+  dial.addEventListener('touchstart', onDragStart, { passive: false });
+  dial.addEventListener('mousedown', onDragStart);
   window.addEventListener('touchmove', onDragMove, { passive: false });
   window.addEventListener('touchend', onDragEnd);
   window.addEventListener('touchcancel', onDragEnd);
