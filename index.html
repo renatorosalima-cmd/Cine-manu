@@ -266,6 +266,7 @@
 
   function closePopover() {
     popover.classList.remove('open');
+    popover.style.display = 'none';
     overlayCatch.classList.remove('open');
     popover.innerHTML = '';
   }
@@ -286,15 +287,21 @@
       popover.appendChild(el);
     });
 
+    // Precisa ficar visível ANTES de medir a largura/altura para posicionar corretamente
     popover.style.display = 'block';
+    popover.style.left = '-9999px';
+    popover.style.top = '-9999px';
+
     const rect = trigger.getBoundingClientRect();
     const pw = popover.offsetWidth || 170;
+    const ph = popover.offsetHeight || 100;
 
     let left = rect.right - pw;
     if (left < 8) left = 8;
     if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
     let top = rect.bottom + 8;
-    if (top + 200 > window.innerHeight) top = rect.top - 8 - popover.offsetHeight;
+    if (top + ph > window.innerHeight - 8) top = rect.top - 8 - ph;
+    if (top < 8) top = 8;
 
     popover.style.left = left + 'px';
     popover.style.top = top + 'px';
