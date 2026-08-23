@@ -71,6 +71,7 @@
       font-size: 11px; font-weight: 800; letter-spacing: 0.3px; z-index: 20; cursor: pointer;
       transition: transform 0.2s, background 0.2s; text-align: center; line-height: 1.1; }
   .manual-fab.open { background: #FF6D00; color: #fff; transform: scale(1.05); }
+  .manual-fab.preset-active { border-color: #FFD54F; box-shadow: 0 0 0 3px rgba(255,213,79,0.25); }
 
   .quick-chips { position: absolute; display: flex; gap: 8px; z-index: 15; flex-wrap: wrap; }
   .chip { background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.15); color: #eee;
@@ -123,6 +124,13 @@
   .switch-cam { border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center;
       justify-content: center; color: #fff; font-size: 19px; cursor: pointer; }
 
+  /* ---------- Barra de zoom ---------- */
+  .zoom-bar { position: absolute; display: flex; z-index: 12;
+      background: rgba(0,0,0,0.45); border-radius: 20px; padding: 3px; gap: 2px; }
+  .zoom-btn { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; color: #ccc; font-size: 11px; font-weight: 700; cursor: pointer; }
+  .zoom-btn.active { background: #FFB300; color: #000; }
+
   /* ---------- Popover genérico (menus dos ícones e das predefinições) ---------- */
   .popover {
     position: fixed;
@@ -156,7 +164,9 @@
   .record-btn.recording { width: 28px; height: 28px; }
 
   .manual-fab { bottom: calc(112px + env(safe-area-inset-bottom, 0px)); left: 20px; }
-  .quick-chips { bottom: calc(112px + env(safe-area-inset-bottom, 0px)); left: 84px; right: 20px; }
+  .quick-chips { bottom: calc(112px + env(safe-area-inset-bottom, 0px)); left: 84px; right: 72px; }
+  .zoom-bar { bottom: calc(112px + env(safe-area-inset-bottom, 0px)); right: 20px; left: auto;
+      transform: none; flex-direction: column; }
 
   .controls-panel { left: 0; right: 0; bottom: 0; border-top: 1px solid #2a2a2a; border-radius: 20px 20px 0 0;
       padding: 14px 16px calc(12px + env(safe-area-inset-bottom, 0px)); transform: translateY(100%); }
@@ -171,6 +181,8 @@
     .rec-controls-bar { left: auto; top: 0; bottom: 0; right: env(safe-area-inset-right, 0px);
         width: 92px; padding: 20px 0; flex-direction: column; }
     .manual-fab { bottom: 20px; left: auto; right: calc(112px + env(safe-area-inset-right, 0px)); }
+    .zoom-bar { bottom: auto; top: 50%; transform: translateY(-50%) rotate(0deg); flex-direction: column;
+        right: calc(112px + env(safe-area-inset-right, 0px)); left: auto; }
     .quick-chips { bottom: auto; top: 20px; left: 20px; right: calc(112px + env(safe-area-inset-right, 0px));
         flex-direction: column; align-items: flex-start; }
     .top-tools { top: 20px; right: calc(112px + env(safe-area-inset-right, 0px)); flex-direction: row; }
@@ -221,6 +233,7 @@
     <div class="chip" data-control="focus" id="chipFocus">AF</div>
     <div class="chip" data-control="wb" id="chipWb">WB AUTO</div>
     <div class="chip" id="chipFps">30 FPS</div>
+    <div class="chip" id="chipStab">EIS PADRÃO</div>
   </div>
 
   <div class="manual-fab" id="fabToggle">PRESET</div>
@@ -253,6 +266,12 @@
     </div>
   </div>
 
+  <div class="zoom-bar" id="zoomBar">
+    <div class="zoom-btn" data-zoom="1">1x</div>
+    <div class="zoom-btn" data-zoom="2">2x</div>
+    <div class="zoom-btn" data-zoom="5">5x</div>
+  </div>
+
   <div class="rec-controls-bar">
     <div class="gallery-thumb"></div>
     <div class="record-btn-wrap" id="recordBtnWrap"><div class="record-btn" id="recordBtn"></div></div>
@@ -273,6 +292,8 @@
   const video = document.getElementById('cameraFeed');
   const cameraMsg = document.getElementById('cameraMsg');
   let currentStream = null;
+  let currentTrack = null;
+  let zoomCapabilities = null; // {min, max, step} se o navegador/câmera suportar zoom real
 
   async function startCamera(constraints) {
     try {
@@ -287,12 +308,18 @@
       currentStream = stream;
       video.srcObject = stream; video.style.display = 'block'; cameraMsg.style.display = 'none';
 
-      // Mostra a resolução REAL entregue pela câmera (o navegador pode não
-      // conseguir a resolução pedida e cair para a mais próxima suportada)
       const track = stream.getVideoTracks()[0];
+      currentTrack = track;
       if (track) {
         const settings = track.getSettings();
         console.log('Resolução real da câmera:', settings.width + 'x' + settings.height);
+
+        zoomCapabilities = null;
+        if (track.getCapabilities) {
+          const caps = track.getCapabilities();
+          if (caps && caps.zoom) zoomCapabilities = caps.zoom;
+        }
+        setZoom(zoomLevel, true); // reaplica o zoom atual no novo stream (ex: ao trocar qualidade)
       }
     } catch (err) {
       cameraMsg.textContent = 'Câmera não disponível neste navegador/contexto (' + err.message + '). O resto da interface funciona normalmente.';
@@ -389,22 +416,38 @@
   const iconSettings = document.getElementById('iconSettings');
   const viewfinderEl = document.querySelector('.viewfinder');
   const levelIndicator = document.getElementById('levelIndicator');
+  const chipStab = document.getElementById('chipStab');
   let gridOn = true, levelOn = false;
+  let stabilization = 'standard'; // 'off' | 'standard' | 'high'
+  const stabLabels = { off: 'DESLIGADA', standard: 'PADRÃO', high: 'ALTA' };
 
   function applyGrid() { viewfinderEl.classList.toggle('grid-on', gridOn); }
   function applyLevel() { levelIndicator.classList.toggle('show', levelOn); }
+  function applyStabChip() {
+    chipStab.textContent = 'EIS ' + stabLabels[stabilization];
+    chipStab.classList.toggle('manual', stabilization !== 'off');
+    chipStab.style.borderColor = stabilization !== 'off' ? '#4DD0E1' : 'rgba(255,255,255,0.15)';
+    chipStab.style.color = stabilization !== 'off' ? '#4DD0E1' : '#eee';
+  }
 
   function renderSettingsPopover() {
     openPopover(iconSettings, 'EXIBIÇÃO', [
       { label: 'Grade', desc: gridOn ? 'LIGADA' : 'DESLIGADA', selected: gridOn, keepOpen: true,
         onSelect: () => { gridOn = !gridOn; applyGrid(); renderSettingsPopover(); } },
       { label: 'Nível de horizonte', desc: levelOn ? 'LIGADO' : 'DESLIGADO', selected: levelOn, keepOpen: true,
-        onSelect: () => { levelOn = !levelOn; applyLevel(); renderSettingsPopover(); } }
+        onSelect: () => { levelOn = !levelOn; applyLevel(); renderSettingsPopover(); } },
+      { label: 'Estabilização (EIS)', desc: stabLabels[stabilization] + (stabilization === 'off' ? ' · use assim com gimbal' : ''), selected: stabilization !== 'off', keepOpen: true,
+        onSelect: () => {
+          stabilization = stabilization === 'off' ? 'standard' : stabilization === 'standard' ? 'high' : 'off';
+          applyStabChip();
+          renderSettingsPopover();
+        } }
     ]);
   }
   iconSettings.addEventListener('click', (e) => { e.stopPropagation(); renderSettingsPopover(); });
   applyGrid();
   applyLevel();
+  applyStabChip();
 
   const panel = document.getElementById('controlsPanel');
   const fab = document.getElementById('fabToggle');
@@ -538,10 +581,14 @@
 
   fab.addEventListener('click', (e) => {
     e.stopPropagation();
-    openPopover(fab, 'PREDEFINIÇÕES', Object.keys(presets).map(name => ({
+    const items = [
+      { label: 'PADRÃO', desc: 'Volta ao automático · 30fps', selected: currentPreset === null,
+        onSelect: () => resetToDefault() }
+    ].concat(Object.keys(presets).map(name => ({
       label: name, desc: presets[name].desc, selected: currentPreset === name,
       onSelect: () => applyPreset(name)
     })));
+    openPopover(fab, 'PREDEFINIÇÕES', items);
   });
 
   function applyPreset(name) {
@@ -550,9 +597,72 @@
     Object.keys(p.values).forEach(key => { controls[key].pos = p.values[key]; manualMode[key] = p.manual[key]; });
     chipFps.textContent = p.fps;
     fab.textContent = name === 'CINEMA' ? 'CINEMA' : 'SLOW MO';
+    fab.classList.add('preset-active');
     refreshUI();
   }
 
+  function resetToDefault() {
+    currentPreset = null;
+    manualMode = { iso: true, shutter: false, focus: false, wb: false };
+    chipFps.textContent = '30 FPS';
+    fab.textContent = 'PRESET';
+    fab.classList.remove('preset-active');
+    refreshUI();
+  }
+
+  // ---------- Zoom ----------
+  let zoomLevel = 1;
+  const zoomButtons = document.querySelectorAll('.zoom-btn');
+
+  function setZoom(level, silent) {
+    zoomLevel = Math.max(1, Math.min(zoomCapabilities ? zoomCapabilities.max : 8, level));
+
+    if (zoomCapabilities && currentTrack) {
+      // Zoom óptico/sensor real, quando o navegador e a câmera permitem
+      currentTrack.applyConstraints({ advanced: [{ zoom: zoomLevel }] }).catch(() => {});
+      video.style.transform = 'scale(1)';
+    } else {
+      // Fallback: zoom digital simples (recorte + ampliação da imagem)
+      video.style.transform = 'scale(' + zoomLevel + ')';
+    }
+
+    if (!silent) {
+      zoomButtons.forEach(b => b.classList.toggle('active', Math.abs(parseFloat(b.dataset.zoom) - zoomLevel) < 0.15));
+    }
+  }
+
+  zoomButtons.forEach(btn => {
+    btn.addEventListener('click', () => setZoom(parseFloat(btn.dataset.zoom)));
+  });
+  setZoom(1);
+
+  // Pinça com dois dedos direto na imagem
+  let pinchStartDist = null;
+  let pinchStartZoom = 1;
+  function touchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  viewfinderEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinchStartDist = touchDistance(e.touches);
+      pinchStartZoom = zoomLevel;
+    }
+  }, { passive: true });
+  viewfinderEl.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchStartDist) {
+      const dist = touchDistance(e.touches);
+      const factor = dist / pinchStartDist;
+      setZoom(pinchStartZoom * factor);
+      e.preventDefault();
+    }
+  }, { passive: false });
+  viewfinderEl.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) pinchStartDist = null;
+  });
+
+  // ---------- Botão de gravar ----------
   let recording = false, seconds = 0, timerInterval = null;
   const recordBtn = document.getElementById('recordBtn');
   const recTimer = document.getElementById('recTimer');
