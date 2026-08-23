@@ -2,30 +2,23 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cine Manual A56 - Mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Cine Manual A56</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body {
     height: 100%;
     overflow: hidden;
     background: #000;
-  }
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
-  .phone {
-    width: min(390px, 92vw);
-    height: min(844px, 94vh);
-    background: #0D0D0D;
-    border-radius: 40px;
-    overflow: hidden;
+  #app {
     position: relative;
-    box-shadow: 0 0 0 10px #111, 0 20px 60px rgba(0,0,0,0.6);
+    width: 100vw;
+    height: 100vh;
+    background: #000;
   }
 
   .viewfinder {
@@ -54,6 +47,7 @@
     font-size: 13px;
     color: #eee;
     z-index: 5;
+    font-family: -apple-system, sans-serif;
   }
 
   .app-title-badge {
@@ -65,6 +59,7 @@
     font-size: 10px;
     letter-spacing: 3px;
     z-index: 5;
+    font-family: -apple-system, sans-serif;
   }
 
   .rec-timer {
@@ -79,19 +74,9 @@
     border-radius: 20px;
     z-index: 5;
   }
-  .rec-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #E53935;
-    animation: blink 1s infinite;
-  }
+  .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #E53935; animation: blink 1s infinite; }
   @keyframes blink { 50% { opacity: 0.2; } }
-  .rec-timer span {
-    color: #fff;
-    font-family: 'Courier New', monospace;
-    font-size: 14px;
-    letter-spacing: 1px;
-  }
+  .rec-timer span { color: #fff; font-family: 'Courier New', monospace; font-size: 14px; letter-spacing: 1px; }
 
   .top-tools {
     position: absolute;
@@ -103,18 +88,17 @@
     z-index: 5;
   }
   .tool-icon {
-    width: 36px; height: 36px;
-    border-radius: 50%;
+    width: 36px; height: 36px; border-radius: 50%;
     background: rgba(0,0,0,0.4);
     display: flex; align-items: center; justify-content: center;
-    color: #fff;
-    font-size: 15px;
+    color: #fff; font-size: 15px; cursor: pointer;
+    font-family: -apple-system, sans-serif;
   }
+  .tool-icon:active { background: rgba(255,109,0,0.6); }
 
+  /* ---------- Botão flutuante que abre/fecha o painel ---------- */
   .manual-fab {
     position: absolute;
-    bottom: 110px;
-    left: 20px;
     width: 52px; height: 52px;
     border-radius: 50%;
     background: rgba(0,0,0,0.55);
@@ -126,21 +110,15 @@
     cursor: pointer;
     transition: transform 0.2s, background 0.2s;
   }
-  .manual-fab.open {
-    background: #FF6D00;
-    color: #fff;
-    transform: rotate(45deg);
-  }
+  .manual-fab.open { background: #FF6D00; color: #fff; transform: rotate(45deg); }
 
   .quick-chips {
     position: absolute;
-    bottom: 110px;
-    left: 84px;
-    right: 20px;
     display: flex;
     gap: 8px;
     z-index: 15;
     flex-wrap: wrap;
+    pointer-events: none;
   }
   .chip {
     background: rgba(0,0,0,0.55);
@@ -154,116 +132,65 @@
   }
   .chip.manual { border-color: #FFB300; color: #FFB300; }
 
+  /* ---------- Painel retrátil de controles ---------- */
   .controls-panel {
     position: absolute;
-    left: 0; right: 0; bottom: 0;
-    background: rgba(20,20,20,0.92);
+    background: rgba(20,20,20,0.95);
     backdrop-filter: blur(6px);
-    border-top: 1px solid #2a2a2a;
-    border-radius: 20px 20px 0 0;
-    padding: 14px 16px 12px;
     z-index: 25;
-    transform: translateY(100%);
     transition: transform 0.28s ease;
-  }
-  .controls-panel.open {
-    transform: translateY(0);
+    font-family: -apple-system, sans-serif;
   }
 
-  .panel-handle {
-    width: 36px; height: 4px;
-    background: #444;
-    border-radius: 2px;
-    margin: 0 auto 12px;
-  }
+  .panel-handle { background: #444; border-radius: 2px; }
 
-  .tabs {
-    display: flex;
-    justify-content: center;
-    gap: 24px;
-    margin-bottom: 12px;
-  }
+  .tabs { display: flex; justify-content: center; }
   .tab {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    color: #888;
-    padding-bottom: 6px;
-    position: relative;
-    cursor: pointer;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.5px; color: #888;
+    padding: 4px 2px 8px; position: relative; cursor: pointer;
   }
   .tab.active { color: #FFB300; }
   .tab.active::after {
-    content: "";
-    position: absolute;
-    bottom: -2px; left: 0; right: 0;
-    height: 2px;
-    background: #FFB300;
-    border-radius: 2px;
+    content: ""; position: absolute; bottom: -2px; left: 0; right: 0;
+    height: 2px; background: #FFB300; border-radius: 2px;
   }
 
   .value-display {
-    text-align: center;
-    font-family: 'Courier New', monospace;
-    font-size: 20px;
-    font-weight: bold;
-    color: #FFB300;
-    margin-bottom: 8px;
-    letter-spacing: 1px;
+    text-align: center; font-family: 'Courier New', monospace;
+    font-size: 20px; font-weight: bold; color: #FFB300; letter-spacing: 1px;
   }
 
-  .slider-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
+  .slider-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
   .slider-track {
-    flex: 1;
-    height: 4px;
-    background: #3a3a3a;
-    border-radius: 2px;
-    position: relative;
+    flex: 1; height: 4px; background: #3a3a3a; border-radius: 2px;
+    position: relative; cursor: pointer;
   }
   .slider-fill {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 42%;
-    background: linear-gradient(90deg, #FF6D00, #FFB300);
-    border-radius: 2px;
+    position: absolute; background: linear-gradient(90deg, #FF6D00, #FFB300);
+    border-radius: 2px; pointer-events: none;
   }
   .slider-thumb {
-    position: absolute;
-    left: 42%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: #fff;
-    border: 3px solid #FFB300;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    position: absolute; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; border: 3px solid #FFB300;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4); pointer-events: none;
   }
-  .slider-icon { font-size: 13px; color: #666; width: 14px; text-align: center; }
+  .slider-icon { font-size: 16px; color: #999; width: 20px; text-align: center; cursor: pointer; }
 
   .mode-toggle { display: flex; justify-content: center; }
-  .toggle-pill {
-    display: flex;
-    background: #0D0D0D;
-    border-radius: 20px;
-    padding: 3px;
-    border: 1px solid #333;
-  }
-  .toggle-option {
-    padding: 5px 18px;
-    font-size: 11px;
-    font-weight: 700;
-    border-radius: 18px;
-    color: #888;
-    cursor: pointer;
-  }
+  .toggle-pill { display: flex; background: #0D0D0D; border-radius: 20px; padding: 3px; border: 1px solid #333; }
+  .toggle-option { padding: 5px 18px; font-size: 11px; font-weight: 700; border-radius: 18px; color: #888; cursor: pointer; }
   .toggle-option.selected { background: #FF6D00; color: #fff; }
 
-  .bottom-bar {
+  .gallery-thumb { border-radius: 10px; background: linear-gradient(135deg, #444, #222); border: 2px solid #333; cursor: pointer; }
+  .record-btn-wrap { border-radius: 50%; border: 4px solid #FF6D00; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .record-btn { border-radius: 50%; background: #fff; transition: all 0.2s; }
+  .record-btn.recording { border-radius: 8px; background: #E53935; }
+  .switch-cam { border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 19px; cursor: pointer; }
+
+  /* ============================================================
+     RETRATO (padrão): barra de captura embaixo, painel sobe do fundo
+     ============================================================ */
+  .rec-controls-bar {
     position: absolute;
     left: 0; right: 0; bottom: 0;
     padding: 16px 24px 28px;
@@ -271,50 +198,76 @@
     align-items: center;
     justify-content: space-between;
     z-index: 10;
-    pointer-events: none;
   }
-  .bottom-bar > * { pointer-events: auto; }
+  .gallery-thumb, .switch-cam { width: 42px; height: 42px; }
+  .record-btn-wrap { width: 72px; height: 72px; }
+  .record-btn { width: 56px; height: 56px; }
+  .record-btn.recording { width: 30px; height: 30px; }
 
-  .gallery-thumb {
-    width: 42px; height: 42px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #444, #222);
-    border: 2px solid #333;
+  .manual-fab { bottom: 118px; left: 20px; }
+  .quick-chips { bottom: 118px; left: 84px; right: 20px; }
+
+  .controls-panel {
+    left: 0; right: 0; bottom: 0;
+    border-top: 1px solid #2a2a2a;
+    border-radius: 20px 20px 0 0;
+    padding: 14px 16px 12px;
+    transform: translateY(100%);
   }
-  .record-btn-wrap {
-    width: 72px; height: 72px;
-    border-radius: 50%;
-    border: 4px solid #FF6D00;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .record-btn {
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    background: #fff;
-    transition: all 0.2s;
-  }
-  .record-btn.recording {
-    width: 30px; height: 30px;
-    border-radius: 8px;
-    background: #E53935;
-  }
-  .switch-cam {
-    width: 42px; height: 42px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 19px;
+  .controls-panel.open { transform: translateY(0); }
+  .panel-handle { width: 36px; height: 4px; margin: 0 auto 12px; }
+  .tabs { gap: 24px; margin-bottom: 12px; }
+  .value-display { margin-bottom: 8px; }
+  .slider-row { margin-bottom: 10px; }
+  .slider-fill { left: 0; top: 0; bottom: 0; }
+  .slider-thumb { top: 50%; transform: translate(-50%, -50%); }
+
+  /* ============================================================
+     PAISAGEM: barra de captura vira coluna à direita,
+     painel de controles sobe pela lateral direita.
+     Isso mantém as mãos nas bordas e nada cobre a imagem
+     enquanto filma "deitado".
+     ============================================================ */
+  @media (orientation: landscape) {
+    .rec-controls-bar {
+      left: auto; top: 0; bottom: 0; right: 0;
+      width: 96px;
+      padding: 28px 0 28px;
+      flex-direction: column;
+    }
+
+    .manual-fab { bottom: 24px; left: auto; right: 118px; }
+    .quick-chips { bottom: auto; top: 20px; left: 20px; right: 118px; flex-direction: column; align-items: flex-start; }
+
+    .top-tools { top: 20px; right: 118px; flex-direction: row; }
+    .rec-timer { top: 20px; left: auto; right: 118px; }
+    .app-title-badge { top: 14px; }
+    .status-bar { padding: 10px 118px 0 20px; }
+
+    .controls-panel {
+      top: 0; bottom: 0; right: 96px; left: auto;
+      width: 260px;
+      border-left: 1px solid #2a2a2a;
+      border-radius: 20px 0 0 20px;
+      padding: 20px 16px;
+      transform: translateX(100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .controls-panel.open { transform: translateX(0); }
+    .panel-handle { display: none; }
+    .tabs { flex-direction: column; gap: 16px; margin-bottom: 20px; align-items: center; }
+    .value-display { margin-bottom: 16px; font-size: 22px; }
+    .slider-row { flex-direction: column; gap: 14px; margin-bottom: 16px; }
+    .slider-track { width: 100%; }
+    .mode-toggle { margin-top: 4px; }
   }
 </style>
 </head>
 <body>
 
-<div class="phone">
+<div id="app">
 
   <div class="viewfinder">
     <div class="status-bar">
@@ -323,9 +276,9 @@
     </div>
     <div class="app-title-badge">CINE MANUAL A56</div>
 
-    <div class="rec-timer">
+    <div class="rec-timer" id="recTimer" style="display:none;">
       <div class="rec-dot"></div>
-      <span>00:14:07</span>
+      <span id="timerText">00:00:00</span>
     </div>
 
     <div class="top-tools">
@@ -335,46 +288,44 @@
     </div>
   </div>
 
-  <div class="quick-chips">
-    <div class="chip manual">ISO 640</div>
-    <div class="chip">1/120s</div>
-    <div class="chip">AF</div>
-    <div class="chip">WB AUTO</div>
+  <div class="quick-chips" id="quickChips">
+    <div class="chip manual" id="chipIso">ISO 640</div>
+    <div class="chip" id="chipShutter">1/120s</div>
+    <div class="chip" id="chipFocus">AF</div>
+    <div class="chip" id="chipWb">WB AUTO</div>
   </div>
 
-  <div class="manual-fab" id="fabToggle" onclick="togglePanel()">
-    <span>+</span>
-  </div>
+  <div class="manual-fab" id="fabToggle"><span>+</span></div>
 
   <div class="controls-panel" id="controlsPanel">
     <div class="panel-handle"></div>
-    <div class="tabs">
-      <div class="tab active">ISO</div>
-      <div class="tab">OBTURADOR</div>
-      <div class="tab">FOCO</div>
-      <div class="tab">WB</div>
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-control="iso">ISO</div>
+      <div class="tab" data-control="shutter">OBTURADOR</div>
+      <div class="tab" data-control="focus">FOCO</div>
+      <div class="tab" data-control="wb">WB</div>
     </div>
-    <div class="value-display">ISO 640</div>
+    <div class="value-display" id="valueDisplay">ISO 640</div>
     <div class="slider-row">
-      <span class="slider-icon">−</span>
-      <div class="slider-track">
-        <div class="slider-fill"></div>
-        <div class="slider-thumb"></div>
+      <span class="slider-icon" id="sliderMinus">−</span>
+      <div class="slider-track" id="sliderTrack">
+        <div class="slider-fill" id="sliderFill"></div>
+        <div class="slider-thumb" id="sliderThumb"></div>
       </div>
-      <span class="slider-icon">+</span>
+      <span class="slider-icon" id="sliderPlus">+</span>
     </div>
     <div class="mode-toggle">
-      <div class="toggle-pill">
-        <div class="toggle-option">AUTO</div>
-        <div class="toggle-option selected">MANUAL</div>
+      <div class="toggle-pill" id="togglePill">
+        <div class="toggle-option" data-mode="auto">AUTO</div>
+        <div class="toggle-option selected" data-mode="manual">MANUAL</div>
       </div>
     </div>
   </div>
 
-  <div class="bottom-bar">
+  <div class="rec-controls-bar">
     <div class="gallery-thumb"></div>
-    <div class="record-btn-wrap">
-      <div class="record-btn recording"></div>
+    <div class="record-btn-wrap" id="recordBtnWrap">
+      <div class="record-btn" id="recordBtn"></div>
     </div>
     <div class="switch-cam">⟳</div>
   </div>
@@ -382,10 +333,136 @@
 </div>
 
 <script>
-  function togglePanel() {
-    document.getElementById('controlsPanel').classList.toggle('open');
-    document.getElementById('fabToggle').classList.toggle('open');
+  const panel = document.getElementById('controlsPanel');
+  const fab = document.getElementById('fabToggle');
+  fab.addEventListener('click', () => {
+    panel.classList.toggle('open');
+    fab.classList.toggle('open');
+  });
+
+  const controls = {
+    iso:     { label: 'ISO',       values: [100, 200, 400, 640, 800, 1600, 3200], pos: 3, chip: 'chipIso',     fmt: v => 'ISO ' + v },
+    shutter: { label: 'OBTURADOR', values: [30, 60, 120, 250, 500, 1000],          pos: 2, chip: 'chipShutter', fmt: v => '1/' + v + 's' },
+    focus:   { label: 'FOCO',      values: ['0.3m','0.6m','1m','2m','5m','∞'],     pos: 5, chip: 'chipFocus',   fmt: v => v },
+    wb:      { label: 'WB',        values: ['AUTO','SOL','NUBLADO','INCANDESC.','FLUORESC.'], pos: 0, chip: 'chipWb', fmt: v => 'WB ' + v }
+  };
+  let activeControl = 'iso';
+  let manualMode = { iso: true, shutter: false, focus: false, wb: false };
+
+  const valueDisplay = document.getElementById('valueDisplay');
+  const sliderFill = document.getElementById('sliderFill');
+  const sliderThumb = document.getElementById('sliderThumb');
+  const sliderTrack = document.getElementById('sliderTrack');
+  const togglePill = document.getElementById('togglePill');
+
+  function isLandscape() {
+    return window.matchMedia('(orientation: landscape)').matches;
   }
+
+  function currentValue(key) { return controls[key].values[controls[key].pos]; }
+
+  function refreshUI() {
+    const c = controls[activeControl];
+    const isManual = manualMode[activeControl];
+
+    valueDisplay.textContent = isManual ? c.fmt(currentValue(activeControl)) : 'AUTO';
+    valueDisplay.style.color = isManual ? '#FFB300' : '#888';
+
+    const pct = (c.pos / (c.values.length - 1)) * 100;
+    if (isLandscape()) {
+      sliderFill.style.top = '0'; sliderFill.style.bottom = 'auto';
+      sliderFill.style.left = '0'; sliderFill.style.right = '0';
+      sliderFill.style.height = pct + '%';
+      sliderFill.style.width = '100%';
+      sliderThumb.style.left = '50%';
+      sliderThumb.style.top = pct + '%';
+      sliderThumb.style.transform = 'translate(-50%, -50%)';
+    } else {
+      sliderFill.style.left = '0'; sliderFill.style.top = '0'; sliderFill.style.bottom = '0';
+      sliderFill.style.width = pct + '%';
+      sliderFill.style.height = '100%';
+      sliderThumb.style.left = pct + '%';
+      sliderThumb.style.top = '50%';
+      sliderThumb.style.transform = 'translate(-50%, -50%)';
+    }
+
+    togglePill.querySelectorAll('.toggle-option').forEach(opt => {
+      opt.classList.toggle('selected', (opt.dataset.mode === 'manual') === isManual);
+    });
+
+    const chipEl = document.getElementById(c.chip);
+    chipEl.textContent = isManual ? c.fmt(currentValue(activeControl)) : c.label + ' AUTO';
+    chipEl.classList.toggle('manual', isManual);
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeControl = tab.dataset.control;
+      refreshUI();
+    });
+  });
+
+  togglePill.querySelectorAll('.toggle-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      manualMode[activeControl] = (opt.dataset.mode === 'manual');
+      refreshUI();
+    });
+  });
+
+  function step(direction) {
+    const c = controls[activeControl];
+    manualMode[activeControl] = true;
+    c.pos = Math.min(c.values.length - 1, Math.max(0, c.pos + direction));
+    refreshUI();
+  }
+  document.getElementById('sliderMinus').addEventListener('click', () => step(-1));
+  document.getElementById('sliderPlus').addEventListener('click', () => step(1));
+
+  sliderTrack.addEventListener('click', (e) => {
+    const rect = sliderTrack.getBoundingClientRect();
+    const c = controls[activeControl];
+    manualMode[activeControl] = true;
+    let fraction;
+    if (isLandscape()) {
+      fraction = (e.clientY - rect.top) / rect.height;
+    } else {
+      fraction = (e.clientX - rect.left) / rect.width;
+    }
+    c.pos = Math.round(fraction * (c.values.length - 1));
+    refreshUI();
+  });
+
+  let recording = false;
+  let seconds = 0;
+  let timerInterval = null;
+  const recordBtn = document.getElementById('recordBtn');
+  const recTimer = document.getElementById('recTimer');
+  const timerText = document.getElementById('timerText');
+
+  document.getElementById('recordBtnWrap').addEventListener('click', () => {
+    recording = !recording;
+    recordBtn.classList.toggle('recording', recording);
+    recTimer.style.display = recording ? 'flex' : 'none';
+
+    if (recording) {
+      seconds = 0;
+      timerText.textContent = '00:00:00';
+      timerInterval = setInterval(() => {
+        seconds++;
+        const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+        const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+        const s = String(seconds % 60).padStart(2, '0');
+        timerText.textContent = `${h}:${m}:${s}`;
+      }, 1000);
+    } else {
+      clearInterval(timerInterval);
+    }
+  });
+
+  window.addEventListener('resize', refreshUI);
+  refreshUI();
 </script>
 
 </body>
