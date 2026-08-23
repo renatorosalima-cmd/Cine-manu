@@ -31,7 +31,17 @@
   .viewfinder::after { content: ""; position: absolute; inset: 0;
       background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-      background-size: 33.33% 33.33%; pointer-events: none; }
+      background-size: 33.33% 33.33%; pointer-events: none;
+      opacity: 0; transition: opacity 0.2s; }
+  .viewfinder.grid-on::after { opacity: 1; }
+
+  .level-indicator { position: absolute; left: 0; right: 0; top: 50%; z-index: 4;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .level-indicator.show { opacity: 1; }
+  .level-indicator .line { flex: 1; height: 1px; background: rgba(0,230,120,0.8); margin: 0 40px; }
+  .level-indicator .dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(0,230,120,0.9);
+      position: absolute; left: 50%; transform: translateX(-50%); }
   #cameraFeed { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
   #cameraMsg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       text-align: center; padding: 40px; color: rgba(255,255,255,0.55); font-size: 13px; line-height: 1.6; z-index: 2; }
@@ -184,6 +194,11 @@
     <div class="status-bar"><span>9:41</span><span>🔋 100%</span></div>
     <div class="app-title-badge">CINE MANUAL A56</div>
 
+    <div class="level-indicator" id="levelIndicator">
+      <div class="line"></div>
+      <div class="dot"></div>
+    </div>
+
     <div class="rec-timer" id="recTimer" style="display:none;">
       <div class="rec-dot"></div><span id="timerText">00:00:00</span>
     </div>
@@ -283,7 +298,11 @@
       const el = document.createElement('div');
       el.className = 'popover-item' + (item.selected ? ' selected' : '');
       el.innerHTML = '<span>' + item.label + (item.selected ? ' ✓' : '') + '</span>' + (item.desc ? '<span class="desc">' + item.desc + '</span>' : '');
-      el.addEventListener('click', (e) => { e.stopPropagation(); item.onSelect(); closePopover(); });
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        item.onSelect();
+        if (!item.keepOpen) closePopover();
+      });
       popover.appendChild(el);
     });
 
@@ -340,16 +359,24 @@
   });
 
   const iconSettings = document.getElementById('iconSettings');
-  let gridOn = false, levelOn = false;
+  const viewfinderEl = document.querySelector('.viewfinder');
+  const levelIndicator = document.getElementById('levelIndicator');
+  let gridOn = true, levelOn = false;
+
+  function applyGrid() { viewfinderEl.classList.toggle('grid-on', gridOn); }
+  function applyLevel() { levelIndicator.classList.toggle('show', levelOn); }
+
   function renderSettingsPopover() {
     openPopover(iconSettings, 'EXIBIÇÃO', [
-      { label: 'Grade', desc: gridOn ? 'LIGADA' : 'DESLIGADA', selected: gridOn,
-        onSelect: () => { gridOn = !gridOn; setTimeout(renderSettingsPopover, 0); } },
-      { label: 'Nível de horizonte', desc: levelOn ? 'LIGADO' : 'DESLIGADO', selected: levelOn,
-        onSelect: () => { levelOn = !levelOn; setTimeout(renderSettingsPopover, 0); } }
+      { label: 'Grade', desc: gridOn ? 'LIGADA' : 'DESLIGADA', selected: gridOn, keepOpen: true,
+        onSelect: () => { gridOn = !gridOn; applyGrid(); renderSettingsPopover(); } },
+      { label: 'Nível de horizonte', desc: levelOn ? 'LIGADO' : 'DESLIGADO', selected: levelOn, keepOpen: true,
+        onSelect: () => { levelOn = !levelOn; applyLevel(); renderSettingsPopover(); } }
     ]);
   }
   iconSettings.addEventListener('click', (e) => { e.stopPropagation(); renderSettingsPopover(); });
+  applyGrid();
+  applyLevel();
 
   const panel = document.getElementById('controlsPanel');
   const fab = document.getElementById('fabToggle');
@@ -426,6 +453,11 @@
   });
 
   let dragging = false;
+  function getPoint(e) {
+    if (e.touches && e.touches.length) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (e.changedTouches && e.changedTouches.length) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
   function updateFromPointer(clientX, clientY) {
     const rect = sliderTrack.getBoundingClientRect();
     const c = controls[activeControl];
@@ -434,13 +466,29 @@
     manualMode[activeControl] = true;
     refreshUI();
   }
-  function onPointerDown(e) { dragging = true; updateFromPointer(e.clientX, e.clientY); }
-  function onPointerMove(e) { if (dragging) updateFromPointer(e.clientX, e.clientY); }
-  function onPointerUp() { dragging = false; }
-  sliderTrack.addEventListener('pointerdown', onPointerDown);
-  sliderThumb.addEventListener('pointerdown', onPointerDown);
-  window.addEventListener('pointermove', onPointerMove);
-  window.addEventListener('pointerup', onPointerUp);
+  function onDragStart(e) {
+    dragging = true;
+    const p = getPoint(e);
+    updateFromPointer(p.x, p.y);
+    if (e.cancelable) e.preventDefault();
+  }
+  function onDragMove(e) {
+    if (!dragging) return;
+    const p = getPoint(e);
+    updateFromPointer(p.x, p.y);
+    if (e.cancelable) e.preventDefault();
+  }
+  function onDragEnd() { dragging = false; }
+
+  [sliderTrack, sliderThumb].forEach(el => {
+    el.addEventListener('touchstart', onDragStart, { passive: false });
+    el.addEventListener('mousedown', onDragStart);
+  });
+  window.addEventListener('touchmove', onDragMove, { passive: false });
+  window.addEventListener('touchend', onDragEnd);
+  window.addEventListener('touchcancel', onDragEnd);
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('mouseup', onDragEnd);
 
   const presets = {
     CINEMA: { desc: '24fps · obturador 180°', fps: '24 FPS', values: { iso: 0.25, shutter: 0.02, focus: 0.6, wb: 0.4 },
