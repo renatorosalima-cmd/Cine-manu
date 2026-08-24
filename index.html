@@ -273,7 +273,8 @@
   </div>
 
   <div class="rec-controls-bar">
-    <div class="gallery-thumb"></div>
+    <label class="gallery-thumb" id="galleryThumb" for="galleryInput"></label>
+    <input type="file" id="galleryInput" accept="image/*,video/*" style="display:none;">
     <div class="record-btn-wrap" id="recordBtnWrap"><div class="record-btn" id="recordBtn"></div></div>
     <div class="switch-cam" id="switchCam">⟳</div>
   </div>
@@ -612,6 +613,18 @@
     fab.classList.remove('preset-active');
     refreshUI();
   }
+
+  // ---------- Atalho da galeria ----------
+  const galleryInput = document.getElementById('galleryInput');
+  const galleryThumb = document.getElementById('galleryThumb');
+  galleryInput.addEventListener('change', () => {
+    const file = galleryInput.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    galleryThumb.style.backgroundImage = 'url(' + url + ')';
+    galleryThumb.style.backgroundSize = 'cover';
+    galleryThumb.style.backgroundPosition = 'center';
+  });
 
   // ---------- Inverter câmera (frontal/traseira) ----------
   const switchCamBtn = document.getElementById('switchCam');
