@@ -275,7 +275,7 @@
   <div class="rec-controls-bar">
     <div class="gallery-thumb"></div>
     <div class="record-btn-wrap" id="recordBtnWrap"><div class="record-btn" id="recordBtn"></div></div>
-    <div class="switch-cam">⟳</div>
+    <div class="switch-cam" id="switchCam">⟳</div>
   </div>
 
 </div>
@@ -293,6 +293,8 @@
   const cameraMsg = document.getElementById('cameraMsg');
   let currentStream = null;
   let currentTrack = null;
+  let currentFacingMode = 'environment';
+  let currentQualityConstraints = {};
   let zoomCapabilities = null; // {min, max, step} se o navegador/câmera suportar zoom real
 
   async function startCamera(constraints) {
@@ -302,7 +304,7 @@
         currentStream.getTracks().forEach(track => track.stop());
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: Object.assign({ facingMode: { ideal: 'environment' } }, constraints || {}),
+        video: Object.assign({ facingMode: { ideal: currentFacingMode } }, constraints || {}),
         audio: false
       });
       currentStream = stream;
@@ -393,7 +395,8 @@
       label: q.value, desc: q.desc, selected: q.value === quality,
       onSelect: () => {
         quality = q.value; iconQuality.textContent = q.value;
-        startCamera({ width: { ideal: q.width }, height: { ideal: q.height } });
+        currentQualityConstraints = { width: { ideal: q.width }, height: { ideal: q.height } };
+        startCamera(currentQualityConstraints);
       }
     })));
   });
@@ -610,9 +613,24 @@
     refreshUI();
   }
 
+  // ---------- Inverter câmera (frontal/traseira) ----------
+  const switchCamBtn = document.getElementById('switchCam');
+  switchCamBtn.addEventListener('click', async () => {
+    currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+    zoomLevel = 1; // reseta o zoom ao trocar de câmera (sensores diferentes)
+    await startCamera(currentQualityConstraints);
+    applyVideoTransform();
+  });
+
   // ---------- Zoom ----------
   let zoomLevel = 1;
   const zoomButtons = document.querySelectorAll('.zoom-btn');
+
+  function applyVideoTransform() {
+    const mirror = currentFacingMode === 'user' ? -1 : 1;
+    const scale = zoomCapabilities ? 1 : zoomLevel; // se o zoom é real (via sensor), não precisa escalar via CSS
+    video.style.transform = 'scaleX(' + (mirror * scale) + ') scaleY(' + scale + ')';
+  }
 
   function setZoom(level, silent) {
     zoomLevel = Math.max(1, Math.min(zoomCapabilities ? zoomCapabilities.max : 8, level));
@@ -620,11 +638,8 @@
     if (zoomCapabilities && currentTrack) {
       // Zoom óptico/sensor real, quando o navegador e a câmera permitem
       currentTrack.applyConstraints({ advanced: [{ zoom: zoomLevel }] }).catch(() => {});
-      video.style.transform = 'scale(1)';
-    } else {
-      // Fallback: zoom digital simples (recorte + ampliação da imagem)
-      video.style.transform = 'scale(' + zoomLevel + ')';
     }
+    applyVideoTransform();
 
     if (!silent) {
       zoomButtons.forEach(b => b.classList.toggle('active', Math.abs(parseFloat(b.dataset.zoom) - zoomLevel) < 0.15));
